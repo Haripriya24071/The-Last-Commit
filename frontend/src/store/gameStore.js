@@ -9,6 +9,35 @@ const SCARE_TYPES = [
   'eerie_laughter'
 ]
 
+const loadSavedSettings = () => {
+  try {
+    const raw = localStorage.getItem('the_last_commit_settings')
+    if (raw) {
+      return JSON.parse(raw)
+    }
+  } catch (e) {
+    console.warn("Could not load saved settings:", e)
+  }
+  return {
+    volume: 0.8,
+    brightness: 1.2,
+    reduceScares: false,
+    enableSkeletonVoice: true,
+    lowQuality: false,
+    isMuted: false
+  }
+}
+
+const saveSettings = (newSettings) => {
+  try {
+    localStorage.setItem('the_last_commit_settings', JSON.stringify(newSettings))
+  } catch (e) {
+    console.warn("Could not persist settings:", e)
+  }
+}
+
+const initialSettings = loadSavedSettings()
+
 export const useGameStore = create((set, get) => ({
   // Screen Flow: 'landing' | 'welcome' | 'repo_input' | 'role_select' | 'map' | 'room'
   currentScreen: 'landing',
@@ -23,8 +52,8 @@ export const useGameStore = create((set, get) => ({
   currentRoom: 'library',
   isScanning: false,
   isDevMode: true,
-  lowQuality: false,
-  reduceScares: false,
+  lowQuality: initialSettings.lowQuality ?? false,
+  reduceScares: initialSettings.reduceScares ?? false,
 
   // Player state
   lifelines: 4,
@@ -53,10 +82,10 @@ export const useGameStore = create((set, get) => ({
   isPointerLocked: false,
 
   // Settings & Accessibility
-  brightness: 1.2, // Default slightly brighter
-  enableSkeletonVoice: true,
-  volume: 0.8,
-  isMuted: false,
+  brightness: initialSettings.brightness ?? 1.2,
+  enableSkeletonVoice: initialSettings.enableSkeletonVoice ?? true,
+  volume: initialSettings.volume ?? 0.8,
+  isMuted: initialSettings.isMuted ?? false,
   healthError: null,
   fallbackReason: null,
   activeSubtitle: null,
@@ -67,23 +96,41 @@ export const useGameStore = create((set, get) => ({
   setRepoUrl: (url) => set({ repoUrl: url }),
   setRole: (role) => set({ role }),
   setView: (view) => set({ currentView: view }),
-  setBrightness: (val) => set({ brightness: val }),
+  setBrightness: (val) => {
+    saveSettings({ ...get(), brightness: val })
+    set({ brightness: val })
+  },
   setVolume: (val) => {
     AudioEngine.setVolume(val)
+    saveSettings({ ...get(), volume: val })
     set({ volume: val })
   },
   toggleMute: () => {
     const muted = AudioEngine.toggleMute()
+    saveSettings({ ...get(), isMuted: muted })
     set({ isMuted: muted })
   },
-  toggleSkeletonVoice: () => set((s) => ({ enableSkeletonVoice: !s.enableSkeletonVoice })),
-  toggleQuality: () => set((state) => ({ lowQuality: !state.lowQuality })),
+  toggleSkeletonVoice: () => set((s) => {
+    const nextVal = !s.enableSkeletonVoice
+    saveSettings({ ...get(), enableSkeletonVoice: nextVal })
+    return { enableSkeletonVoice: nextVal }
+  }),
+  toggleQuality: () => set((state) => {
+    const nextVal = !state.lowQuality
+    saveSettings({ ...get(), lowQuality: nextVal })
+    return { lowQuality: nextVal }
+  }),
   toggleDevMode: () => set((state) => ({ isDevMode: !state.isDevMode })),
-  toggleReduceScares: () => set((state) => ({ reduceScares: !state.reduceScares })),
+  toggleReduceScares: () => set((state) => {
+    const nextVal = !state.reduceScares
+    saveSettings({ ...get(), reduceScares: nextVal })
+    return { reduceScares: nextVal }
+  }),
   unlockAudio: () => set({ audioUnlocked: true }),
   setPointerLocked: (locked) => set({ isPointerLocked: locked }),
   setSubtitle: (subtitle) => set({ activeSubtitle: subtitle }),
   clearSubtitle: () => set({ activeSubtitle: null }),
+
 
   // Check Backend /health on load
   checkBackendHealth: async () => {
