@@ -42,12 +42,17 @@ def parse_github_url(url: str) -> Optional[Tuple[str, str, str]]:
 def check_github_repo_size_api(owner: str, repo: str) -> Optional[int]:
     """
     Attempts a lightweight check of repository size (in KB) via GitHub API.
+    Supports optional GITHUB_TOKEN environment variable for higher API rate limits.
     Returns size in KB or None if rate limited / offline.
     """
     try:
         import httpx
         url = f"https://api.github.com/repos/{owner}/{repo}"
         headers = {"User-Agent": "The-Last-Commit-Scanner/2.0"}
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token.strip()}"
+
         res = httpx.get(url, headers=headers, timeout=3.0)
         if res.status_code == 200:
             data = res.json()
@@ -55,6 +60,7 @@ def check_github_repo_size_api(owner: str, repo: str) -> Optional[int]:
     except Exception:
         pass
     return None
+
 
 
 def get_latest_commit_hash(repo_dir: Path) -> Optional[str]:
