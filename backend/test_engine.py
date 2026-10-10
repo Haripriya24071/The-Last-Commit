@@ -307,5 +307,36 @@ def test_github_api_size_check_rate_limit_resilience():
     assert size is None or isinstance(size, int)
 
 
+# 16. Distinct Relic Sets Per Role on Sample Test
+def test_distinct_relic_sets_per_role_on_sample():
+    """Verify that picking each role on the sample repo yields a distinct, non-identical set of relics."""
+    from engine.game_session import game_sessions
+
+    # Ghost Session
+    ghost_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"}).json()
+    ghost_session = game_sessions.get_session(ghost_scan["scan_id"])
+    ghost_relic_types = {f["type"] for f in ghost_session.relics_all}
+
+    # Reaper Session
+    reaper_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "reaper"}).json()
+    reaper_session = game_sessions.get_session(reaper_scan["scan_id"])
+    reaper_relic_types = {f["type"] for f in reaper_session.relics_all}
+
+    # Skeleton Session
+    skeleton_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "skeleton"}).json()
+    skeleton_session = game_sessions.get_session(skeleton_scan["scan_id"])
+    skeleton_relic_types = {f["type"] for f in skeleton_session.relics_all}
+
+    assert len(ghost_relic_types) > 0
+    assert len(reaper_relic_types) > 0
+    assert len(skeleton_relic_types) > 0
+
+    # Ensure sets are distinct between roles
+    assert ghost_relic_types != reaper_relic_types
+    assert reaper_relic_types != skeleton_relic_types
+    assert ghost_relic_types != skeleton_relic_types
+
+
+
 
 
