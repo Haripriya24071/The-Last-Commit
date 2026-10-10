@@ -166,6 +166,36 @@ All endpoints return and accept JSON. If an error occurs, the server responds wi
 
 ---
 
+## 📸 06. Visual Interface & Experience
+
+The application is crafted with a high-contrast gothic aesthetic, dynamic torchlight shadows, and atmospheric post-processing.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🕯️ THE LAST COMMIT — HAUNTING REPORT                                       │
+│ Investigator: Detective Turing       Score: 350 pts       Rank: GHOST WHISPERER │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 🔮 PURGED RELICS (Found Anomalies)                                          │
+│  • [reaper] sample_repo/config/secrets.env (Line 4)                          │
+│    Issue: Hardcoded AWS Secret Access Key (Certain)                         │
+│    Fix: Move secret to environment variables or secret manager.             │
+│                                                                             │
+│  • [skeleton] sample_repo/utils/helpers.py (Line 38)                         │
+│    Issue: Lingering FIXME marker (Certain)                                  │
+│    Fix: Address unresolved FIXME: handle unexpected API error properly.     │
+│                                                                             │
+│ 👁️ MISSED ANOMALIES (The House Keeps Its Secrets)                           │
+│  • [ghost] sample_repo/utils/helpers.py (Line 5)                            │
+│    Issue: Unused import: os (Possible)                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ [ 🔄 PLAY AGAIN (0 PTS) ]                   [ 🏚️ INVESTIGATE NEW REPO ]     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+Screenshots of every stage (Landing Screen, Ritual Loading, Cursed Mansion Map, 3D Procedural Room Exploration, and Haunting Report) can be captured in `/screenshots`.
+
+---
+
 ## 🔒 Safety, Security & Integrity Guarantees
 - **Zero Code Execution:** Repositories are cloned shallowly with strict resource limits, analyzed entirely via static AST/pattern extraction, and permanently deleted.
 - **Server-Side Authority:** Real objects versus decoy files are strictly managed on the backend and only evaluated upon interaction, making client-side tampering impossible.
