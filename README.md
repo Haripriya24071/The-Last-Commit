@@ -53,7 +53,47 @@ The architecture separates concerns cleanly between a high-performance modern fr
 
 ---
 
-## 🏛️ 03. System Architecture
+## 🚀 03. Running the Application
+
+### Prerequisites
+- **Python**: 3.11 or higher
+- **Node.js**: v18.0 or higher
+- **Git**: Installed and available in PATH
+
+### 1. Start the Backend API Server
+```bash
+# Navigate to the backend directory
+cd backend
+
+# Create and activate a virtual environment
+python -m venv .venv
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# On Linux / macOS:
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start FastAPI development server on port 8000
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+Backend API will be live at: `http://127.0.0.1:8000` (Docs: `http://127.0.0.1:8000/docs`)
+
+### 2. Start the Frontend Web Client
+```bash
+# In a new terminal, navigate to the frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start Vite development server
+npm run dev
+```
+Frontend Web Client will be live at: `http://127.0.0.1:5173`
+
+---
 
 The browser client handles user presentation and interaction, while the FastAPI backend retains absolute authority over file validity to prevent client-side inspection or cheating.
 
