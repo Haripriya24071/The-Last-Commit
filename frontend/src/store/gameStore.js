@@ -52,17 +52,50 @@ export const useGameStore = create((set, get) => ({
   audioUnlocked: false,
   isPointerLocked: false,
 
+  // Settings & Accessibility
+  brightness: 1.2, // Default slightly brighter
+  enableSkeletonVoice: true,
+  volume: 0.8,
+  isMuted: false,
+  healthError: null,
+  fallbackReason: null,
+
   // Screen Actions
   setScreen: (screen) => set({ currentScreen: screen }),
   setPlayerName: (name) => set({ playerName: name || 'Investigator' }),
   setRepoUrl: (url) => set({ repoUrl: url }),
   setRole: (role) => set({ role }),
   setView: (view) => set({ currentView: view }),
+  setBrightness: (val) => set({ brightness: val }),
+  setVolume: (val) => {
+    AudioEngine.setVolume(val)
+    set({ volume: val })
+  },
+  toggleMute: () => {
+    const muted = AudioEngine.toggleMute()
+    set({ isMuted: muted })
+  },
+  toggleSkeletonVoice: () => set((s) => ({ enableSkeletonVoice: !s.enableSkeletonVoice })),
   toggleQuality: () => set((state) => ({ lowQuality: !state.lowQuality })),
   toggleDevMode: () => set((state) => ({ isDevMode: !state.isDevMode })),
   toggleReduceScares: () => set((state) => ({ reduceScares: !state.reduceScares })),
   unlockAudio: () => set({ audioUnlocked: true }),
   setPointerLocked: (locked) => set({ isPointerLocked: locked }),
+
+  // Check Backend /health on load
+  checkBackendHealth: async () => {
+    try {
+      const res = await fetch('/health')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      set({ healthError: null })
+      return true
+    } catch (err) {
+      console.error('Backend health check failed:', err)
+      set({ healthError: 'Backend server is unreachable on http://127.0.0.1:8000. Please start the FastAPI server.' })
+      return false
+    }
+  },
 
   // Set active scan session from API
   setScanSession: (mapData) => set({
@@ -228,7 +261,7 @@ export const useGameStore = create((set, get) => ({
 
   // Handle Object Click via POST /api/check
   checkObject: async (objectId) => {
-    const { scanId, currentRoom, isGameOver, lastScareType } = get()
+    const { scanId, currentRoom, isGameOver, lastScareType, enableSkeletonVoice, role } = get()
     if (!scanId || isGameOver) return
 
     try {
@@ -249,6 +282,9 @@ export const useGameStore = create((set, get) => ({
           foundRelics: [...state.foundRelics, result.relic],
           activeRelicModal: result.relic
         }))
+        if (enableSkeletonVoice) {
+          AudioEngine.speakSkeletonRoast('relic', role)
+        }
       } else {
         const availableScares = SCARE_TYPES.filter(s => s !== lastScareType)
         const nextScare = availableScares[Math.floor(Math.random() * availableScares.length)]
@@ -259,6 +295,13 @@ export const useGameStore = create((set, get) => ({
           activeScare: nextScare,
           lastScareType: nextScare
         })
+        if (enableSkeletonVoice) {
+          if (result.game_over) {
+            AudioEngine.speakSkeletonRoast('game_over', role)
+          } else {
+            AudioEngine.speakSkeletonRoast('decoy', role)
+          }
+        }
       }
       return result
     } catch (err) {
@@ -285,18 +328,43 @@ export const useGameStore = create((set, get) => ({
   clearRelicModal: () => set({ activeRelicModal: null }),
   closeReport: () => set({ showReport: false }),
 
-  resetGame: () => set({
-    lifelines: 4,
-    score: 0,
-    lanternVisitsLeft: 4,
-    foundRelics: [],
-    isGameOver: false,
-    activeRelicModal: null,
-    activeScare: null,
-    showReport: false,
-    hauntingReport: null,
-    currentView: 'map'
-  })
+  // Play Again: Re-light candles and reset to map with 0 score
+  resetGame: () => {
+    const { repoUrl, role } = get()
+    set({
+      lifelines: 4,
+      score: 0,
+      lanternVisitsLeft: 4,
+      foundRelics: [],
+      isGameOver: false,
+      activeRelicModal: null,
+      activeScare: null,
+      showReport: false,
+      hauntingReport: null,
+      currentScreen: 'map',
+      currentView: 'map'
+    })
+    get().fetchMansionMap(repoUrl || 'sample')
+  },
+
+  // New Repo: Reset everything and go back to repo input screen
+  startNewRepo: () => {
+    set({
+      scanId: null,
+      lifelines: 4,
+      score: 0,
+      lanternVisitsLeft: 4,
+      foundRelics: [],
+      isGameOver: false,
+      activeRelicModal: null,
+      activeScare: null,
+      showReport: false,
+      hauntingReport: null,
+      mansionMap: null,
+      currentScreen: 'repo_input',
+      currentView: 'map'
+    })
+  }
 }))
 
 
