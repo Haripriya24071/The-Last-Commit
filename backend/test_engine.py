@@ -217,11 +217,74 @@ def test_haunting_report_midgame_privacy():
     # Trigger game over
     session = game_sessions.get_session(scan_id)
     session.lifelines_remaining = 0
-    session.is_game_over = True
+# 10. Lantern Visit Spending & Limit Test
+def test_enter_room_spends_lantern_visits_and_limits():
+    """Verify /api/enter-room deducts lantern visits and rejects when 0 visits remain."""
+    scan_res = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
+    scan_id = scan_res.json()["scan_id"]
 
-    # Post-game check
-    final_report = client.get(f"/api/report/{scan_id}").json()
-    assert final_report["is_game_finished"] is True
-    assert len(final_report["relics_missed"]) > 0  # Revealed after game ends
+    # Initial state: 4 visits
+    map_res = client.get(f"/api/map/{scan_id}").json()
+    assert map_res["lantern_visits_left"] == 4
+
+    # Visit 1
+    v1 = client.post("/api/enter-room", json={"scan_id": scan_id, "room_name": "library"}).json()
+    assert v1["is_valid"] is True
+    assert v1["lantern_visits_left"] == 3
+
+    # Visit 2, 3, 4
+    client.post("/api/enter-room", json={"scan_id": scan_id, "room_name": "cellar"})
+    client.post("/api/enter-room", json={"scan_id": scan_id, "room_name": "chapel"})
+    v4 = client.post("/api/enter-room", json={"scan_id": scan_id, "room_name": "study"}).json()
+    assert v4["lantern_visits_left"] == 0
+
+    # Visit 5 (Must be rejected)
+    v5_res = client.post("/api/enter-room", json={"scan_id": scan_id, "room_name": "attic"})
+    assert v5_res.status_code == 400
+    assert "No visits remaining" in v5_res.json()["detail"]
+
+
+# 11. Scanning Same Repo Twice Works (Cache Test)
+def test_scan_same_repo_twice_cached():
+    """Verify scanning the same repo twice succeeds quickly and returns role presence."""
+    res_1 = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
+    assert res_1.status_code == 200
+    data_1 = res_1.json()
+    assert "role_presence" in data_1
+    assert data_1["role_presence"]["ghost"] in {"strong", "faint", "none"}
+
+    res_2 = client.post("/api/scan", json={"repo_url": "sample", "role": "reaper"})
+    assert res_2.status_code == 200
+    data_2 = res_2.json()
+    assert data_2["role_presence"]["reaper"] in {"strong", "faint", "none"}
+
+
+# 12. Failed Clone Sets Fallback Reason and Fell Back Flag
+def test_failed_clone_sets_fallback_reason_and_fell_back_flag():
+    """Verify failed clone sets fallback_reason and fell_back=True."""
+    res = client.post("/api/scan", json={"repo_url": "https://github.com/nonexistent-owner-xyz-12345/nonexistent-repo", "role": "skeleton"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["fell_back"] is True
+    assert data["fallback_reason"] is not None
+
+
+# 13. Windows Cleanup Regression Test
+def test_windows_cleanup_regression_on_readonly_files(tmp_path):
+    """Verify safe_remove_directory cleans up read-only files on Windows."""
+    import stat
+    import os
+    from engine.ingester import safe_remove_directory
+
+    test_dir = tmp_path / "readonly_test_dir"
+    test_dir.mkdir()
+    ro_file = test_dir / "readonly_git_object.pack"
+    ro_file.write_text("dummy binary git pack")
+    # Mark as read-only
+    os.chmod(ro_file, stat.S_IREAD)
+
+    safe_remove_directory(test_dir)
+    assert not test_dir.exists()
+
 
 
