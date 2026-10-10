@@ -3,6 +3,7 @@ Repository Ingestion Safeguards.
 Handles shallow git clones (--depth 50), repo size limits, and safe sandbox cleanup.
 """
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -11,57 +12,88 @@ from pathlib import Path
 from typing import Tuple, Optional
 
 # Safety thresholds
-MAX_REPO_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
-MAX_FILES_COUNT = 500
-CLONE_TIMEOUT_SECONDS = 15
+MAX_REPO_SIZE_MB = 150  # Only reject truly massive repositories
+CLONE_TIMEOUT_SECONDS = 20
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SAMPLE_REPO_PATH = REPO_ROOT / "sample_repo"
 
+GITHUB_URL_PATTERN = re.compile(
+    r"""^(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_\-\.]+)/([a-zA-Z0-9_\-\.]+?)(?:\.git)?(?:/.*)?$"""
+)
 
-def get_dir_size_and_count(path: Path) -> Tuple[int, int]:
-    """Calculates the total byte size and file count of a directory."""
-    total_size = 0
-    file_count = 0
-    for root, _, files in os.walk(path):
-        for f in files:
-            fp = os.path.join(root, f)
-            if not os.path.islink(fp):
-                try:
-                    total_size += os.path.getsize(fp)
-                    file_count += 1
-                except (OSError, FileNotFoundError):
-                    pass
-    return total_size, file_count
+
+def parse_github_url(url: str) -> Optional[Tuple[str, str, str]]:
+    """
+    Validates that a URL matches github.com/{owner}/{repo}.
+    Returns: (owner, repo_name, canonical_clone_url) or None
+    """
+    match = GITHUB_URL_PATTERN.match(url.strip())
+    if not match:
+        return None
+    owner, repo = match.group(1), match.group(2)
+    canonical = f"https://github.com/{owner}/{repo}.git"
+    return owner, repo, canonical
+
+
+def check_github_repo_size_api(owner: str, repo: str) -> Optional[int]:
+    """
+    Attempts a lightweight check of repository size (in KB) via GitHub API.
+    Returns size in KB or None if rate limited / offline.
+    """
+    try:
+        import httpx
+        url = f"https://api.github.com/repos/{owner}/{repo}"
+        headers = {"User-Agent": "The-Last-Commit-Scanner/2.0"}
+        res = httpx.get(url, headers=headers, timeout=3.0)
+        if res.status_code == 200:
+            data = res.json()
+            return data.get("size", 0)  # Size in KB
+    except Exception:
+        pass
+    return None
 
 
 def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str]]:
     """
     Ingests a repository for scanning.
-    Returns: (repo_path, is_temp, error_message)
+    Returns: (repo_path, is_temp, fallback_reason)
     """
-    # 1. Handle Built-in Cursed Sample House
-    target_clean = (repo_target or "").strip().lower()
-    if target_clean in {"", "sample", "sample_repo", "cursed", "default", "the cursed house"}:
+    target_clean = (repo_target or "").strip()
+
+    # 1. Handle Built-in Cursed Sample House explicitly
+    if target_clean.lower() in {"", "sample", "sample_repo", "cursed", "default", "the cursed house"}:
         if SAMPLE_REPO_PATH.exists():
             return SAMPLE_REPO_PATH, False, None
         return Path("sample_repo"), False, None
 
-    # 2. Check if local path exists
-    local_path = Path(repo_target)
+    # 2. Local folder path
+    local_path = Path(target_clean)
     if local_path.exists() and local_path.is_dir():
         return local_path, False, None
 
-    # 3. Remote Git URL Cloning
-    if not (repo_target.startswith("http://") or repo_target.startswith("https://") or repo_target.startswith("git@")):
-        return SAMPLE_REPO_PATH, False, f"Invalid repository link '{repo_target}'. Falling back to Cursed House."
+    # 3. Validate GitHub repository URL pattern
+    parsed = parse_github_url(target_clean)
+    if not parsed:
+        reason = f"Repository URL must match 'https://github.com/owner/repo'. Provided: '{target_clean}'"
+        return SAMPLE_REPO_PATH, False, reason
 
+    owner, repo_name, canonical_clone_url = parsed
+
+    # 4. Optional Pre-check via GitHub API
+    size_kb = check_github_repo_size_api(owner, repo_name)
+    if size_kb is not None:
+        size_mb = size_kb / 1024
+        if size_mb > MAX_REPO_SIZE_MB:
+            reason = f"Repository is too massive ({size_mb:.1f} MB exceeds {MAX_REPO_SIZE_MB} MB limit)."
+            return SAMPLE_REPO_PATH, False, reason
+
+    # 5. Clone repository with --depth 50
     temp_id = f"mansion_clone_{uuid.uuid4().hex[:8]}"
     temp_dir = Path(tempfile.gettempdir()) / temp_id
 
     try:
-        # Clone shallow depth 50 to preserve git log for commit messages
-        cmd = ["git", "clone", "--depth", "50", repo_target, str(temp_dir)]
+        cmd = ["git", "clone", "--depth", "50", canonical_clone_url, str(temp_dir)]
         res = subprocess.run(
             cmd,
             capture_output=True,
@@ -71,22 +103,18 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str]]:
 
         if res.returncode != 0:
             shutil.rmtree(temp_dir, ignore_errors=True)
-            return SAMPLE_REPO_PATH, False, f"Git clone failed: {res.stderr[:200]}. Using Cursed House."
-
-        # Verify size and file count limits
-        size_bytes, file_count = get_dir_size_and_count(temp_dir)
-        if size_bytes > MAX_REPO_SIZE_BYTES or file_count > MAX_FILES_COUNT:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            return SAMPLE_REPO_PATH, False, f"Repository exceeded size limit ({file_count} files, {size_bytes / (1024*1024):.1f}MB). Using Cursed House."
+            err_snip = res.stderr.strip().splitlines()[-1] if res.stderr.strip() else "Clone failed"
+            reason = f"Git clone failed: {err_snip}"
+            return SAMPLE_REPO_PATH, False, reason
 
         return temp_dir, True, None
 
     except subprocess.TimeoutExpired:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        return SAMPLE_REPO_PATH, False, "Git clone timed out after 15 seconds. Using Cursed House."
+        return SAMPLE_REPO_PATH, False, f"Git clone timed out after {CLONE_TIMEOUT_SECONDS}s."
     except Exception as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        return SAMPLE_REPO_PATH, False, f"Ingestion error: {str(e)}. Using Cursed House."
+        return SAMPLE_REPO_PATH, False, f"Ingestion error: {str(e)}"
 
 
 def cleanup_temp_repo(repo_path: Path, is_temp: bool):
