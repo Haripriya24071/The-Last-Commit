@@ -105,7 +105,16 @@ export default function RoleSelectScreen() {
           return (
             <div
               key={r.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select Role ${r.title}: ${r.subtitle}. Presence is ${presence}.`}
               onClick={() => handleSelectRole(r.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleSelectRole(r.id)
+                }
+              }}
               style={{
                 background: isSelected ? r.bgGlow : 'rgba(18, 14, 28, 0.9)',
                 border: `2px solid ${isSelected ? r.themeColor : isNone ? 'rgba(255,255,255,0.06)' : r.border}`,
@@ -119,9 +128,11 @@ export default function RoleSelectScreen() {
                 boxShadow: isSelected ? `0 0 30px ${r.bgGlow}` : '0 8px 24px rgba(0,0,0,0.7)',
                 transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s, opacity 0.2s',
                 backdropFilter: 'blur(12px)',
-                position: 'relative'
+                position: 'relative',
+                outline: 'none'
               }}
             >
+
               <div>
                 {/* Icon & Presence Tag */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
