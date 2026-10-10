@@ -53,6 +53,10 @@ class GameSession:
         self.lantern_visits_remaining: int = 4
         self.score: int = 0
         self.is_game_over: bool = False
+        
+        # Warmth rate-limiting & caching
+        self.last_warmth_time: float = 0.0
+        self.last_warmth_result: Dict[str, Any] = {"warmth": 0.0, "has_relics": True}
 
     def to_map_view(self) -> Dict[str, Any]:
         """Returns the cursed mansion map view without revealing real/decoy answers."""
@@ -70,11 +74,24 @@ class GameSession:
 
     def calculate_warmth(self, room_name: str, x: float, y: float, z: float) -> Dict[str, Any]:
         """
-        Calculates heat/proximity (0.0 to 1.0) to the nearest unfound real relic.
-        Never leaks object identity, position, or file name.
+        Calculates heat/proximity quantized to 5 levels (0.0, 0.25, 0.5, 0.75, 1.0).
+        Clamps coordinates to room bounds, rate-limits per session, and never leaks object identity or coordinates.
         """
+        now = time.time()
+        # Rate limit: minimum 150ms between recalculations per session
+        if (now - self.last_warmth_time) < 0.15:
+            return self.last_warmth_result
+
         if room_name not in self.rooms_server_truth:
-            return {"warmth": 0.0, "has_relics": False}
+            result = {"warmth": 0.0, "has_relics": False}
+            self.last_warmth_time = now
+            self.last_warmth_result = result
+            return result
+
+        # Clamp player coordinates to 3D room boundaries (-5.8m to 5.8m)
+        clamped_x = max(-5.8, min(5.8, float(x)))
+        clamped_y = max(0.0, min(3.5, float(y)))
+        clamped_z = max(-5.8, min(5.8, float(z)))
 
         room_truth = self.rooms_server_truth[room_name]
         
@@ -87,27 +104,38 @@ class GameSession:
                 unfound_real_positions.append(pos)
 
         if not unfound_real_positions:
-            return {"warmth": 0.0, "has_relics": False}
+            result = {"warmth": 0.0, "has_relics": False}
+            self.last_warmth_time = now
+            self.last_warmth_result = result
+            return result
 
         # Calculate minimum Euclidean distance in 3D
         min_distance = 999.0
         for rx, ry, rz in unfound_real_positions:
-            dist = ((x - rx) ** 2 + (y - ry) ** 2 + (z - rz) ** 2) ** 0.5
+            dist = ((clamped_x - rx) ** 2 + (clamped_y - ry) ** 2 + (clamped_z - rz) ** 2) ** 0.5
             if dist < min_distance:
                 min_distance = dist
 
         # Range: <= 1.5m -> 1.0 (Maximum panic heartbeat), >= 8.0m -> 0.0
         if min_distance <= 1.5:
-            warmth_val = 1.0
+            raw_warmth = 1.0
         elif min_distance >= 8.0:
-            warmth_val = 0.0
+            raw_warmth = 0.0
         else:
-            warmth_val = 1.0 - ((min_distance - 1.5) / (8.0 - 1.5))
+            raw_warmth = 1.0 - ((min_distance - 1.5) / (8.0 - 1.5))
 
-        return {
-            "warmth": round(max(0.0, min(1.0, warmth_val)), 2),
+        # Quantize to 5 coarse discrete levels: [0.0, 0.25, 0.5, 0.75, 1.0]
+        clamped_raw = max(0.0, min(1.0, raw_warmth))
+        quantized_warmth = round(clamped_raw * 4) / 4.0
+
+        result = {
+            "warmth": quantized_warmth,
             "has_relics": True
         }
+        self.last_warmth_time = now
+        self.last_warmth_result = result
+        return result
+
 
 
 
@@ -273,6 +301,7 @@ class SessionStore:
         total_relics = len(session.findings)
         found_count = len(session.found_relics)
         lifelines = session.lifelines_remaining
+        is_finished = session.is_game_over or (total_relics > 0 and found_count == total_relics)
 
         # Calculate final score: +100 per relic, +25 per remaining lifeline
         final_score = (found_count * 100) + (lifelines * 25)
@@ -288,9 +317,12 @@ class SessionStore:
             rank_title = "Fresh Meat 💀"
             rank_desc = "The ghosts claimed victory this time. Re-light your lantern and venture back inside."
 
-        # Compute missed relics
+        # Compute missed relics only if the game has ended (victory or defeat). Never leak mid-game.
         found_ids = {r["id"] for r in session.found_relics if "id" in r}
-        missed_relics = [f.model_dump() for f in session.findings if f.id not in found_ids]
+        if is_finished:
+            missed_relics = [f.model_dump() for f in session.findings if f.id not in found_ids]
+        else:
+            missed_relics = []
 
         return {
             "scan_id": session.scan_id,
@@ -303,8 +335,10 @@ class SessionStore:
             "relics_found_count": found_count,
             "relics_found": session.found_relics,
             "relics_missed": missed_relics,
+            "is_game_finished": is_finished,
             "is_suspiciously_clean": session.is_suspiciously_clean
         }
+
 
 
 # Global in-memory session manager
