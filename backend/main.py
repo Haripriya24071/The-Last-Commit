@@ -67,7 +67,7 @@ async def global_exception_handler(request, exc: Exception):
     )
 
 
-# Request Models
+# Request & Response Models
 class ScanRequest(BaseModel):
     repo_url: Optional[str] = Field(default="sample", description="GitHub URL or 'sample' for built-in cursed repo")
     role: RoleType = Field(default=RoleType.GHOST, description="Character role: ghost, reaper, or skeleton")
@@ -92,7 +92,97 @@ class WarmthRequest(BaseModel):
     z: float = Field(description="Player Z coordinate")
 
 
-@app.get("/")
+# Response Schemas
+class RootResponse(BaseModel):
+    game: str
+    tagline: str
+    status: str
+    version: str
+
+
+class HealthResponse(BaseModel):
+    status: str
+    whisper: str
+
+
+class ScanStatusResponse(BaseModel):
+    scan_id: str
+    status: str
+    progress_percent: int
+    current_phase: str
+    message: str
+    role: Optional[str] = None
+    fell_back: Optional[bool] = None
+    created_at: Optional[float] = None
+
+
+class MapViewResponse(BaseModel):
+    scan_id: str
+    repo_target: str
+    role: str
+    fell_back: bool
+    fallback_reason: Optional[str] = None
+    timing_metrics: Dict[str, float] = {}
+    role_presence: Dict[str, str] = {}
+    lantern_visits_left: int
+    lifelines_left: int
+    score: int
+    rooms: Dict[str, Any]
+    is_game_over: bool
+
+
+class EnterRoomResponse(BaseModel):
+    is_valid: bool
+    room_name: str
+    lantern_visits_left: int
+    message: str
+    error: Optional[str] = None
+
+
+class RoomDetailResponse(BaseModel):
+    scan_id: str
+    room: Dict[str, Any]
+
+
+class WarmthResponse(BaseModel):
+    warmth: float
+    quantized_level: int
+    nearest_distance: float
+    status: str
+    message: str
+    cached: bool = False
+
+
+class CheckResponse(BaseModel):
+    is_relic: bool
+    object_id: str
+    score_awarded: int
+    total_score: int
+    lifelines_remaining: int
+    is_game_over: bool
+    relic_info: Optional[Dict[str, Any]] = None
+    jump_scare: Optional[Dict[str, Any]] = None
+    already_purged: Optional[bool] = False
+    error: Optional[str] = None
+
+
+class HauntingReportResponse(BaseModel):
+    scan_id: str
+    investigator_rank: str
+    score: int
+    lifelines_remaining: int
+    is_game_finished: bool
+    relics_found: List[Dict[str, Any]]
+    relics_missed: List[Dict[str, Any]]
+    total_planted_anomalies: int
+
+
+class CacheRefreshResponse(BaseModel):
+    status: str
+    cached_roles: List[str]
+
+
+@app.get("/", response_model=RootResponse)
 def read_root():
     return {
         "game": "The Last Commit",
@@ -102,7 +192,7 @@ def read_root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 def health_check():
     return {
         "status": "healthy",
@@ -110,7 +200,7 @@ def health_check():
     }
 
 
-@app.post("/api/scan")
+@app.post("/api/scan", response_model=MapViewResponse)
 def scan_repository_endpoint(payload: ScanRequest):
     """
     Ingests repository, executes detectors, and builds the 5-room haunted mansion.
@@ -131,7 +221,7 @@ def scan_repository_endpoint(payload: ScanRequest):
         cleanup_temp_repo(repo_path, is_temp)
 
 
-@app.get("/api/scan/status/{scan_id}")
+@app.get("/api/scan/status/{scan_id}", response_model=ScanStatusResponse)
 def get_scan_status_endpoint(scan_id: str):
     """
     Returns the real-time progress status and pipeline stage of a scan session.
@@ -158,7 +248,8 @@ def get_scan_status_endpoint(scan_id: str):
     }
 
 
-@app.get("/api/map/{scan_id}")
+@app.get("/api/map/{scan_id}", response_model=MapViewResponse)
+
 
 def get_map_endpoint(scan_id: str):
     """
@@ -171,7 +262,7 @@ def get_map_endpoint(scan_id: str):
     return session.to_map_view()
 
 
-@app.post("/api/enter-room")
+@app.post("/api/enter-room", response_model=EnterRoomResponse)
 def enter_room_endpoint(payload: EnterRoomRequest):
     """
     Spends one lantern visit and enters the requested 3D room.
@@ -189,7 +280,7 @@ def enter_room_endpoint(payload: EnterRoomRequest):
     return result
 
 
-@app.get("/api/room/{scan_id}/{room_name}")
+@app.get("/api/room/{scan_id}/{room_name}", response_model=RoomDetailResponse)
 def get_room_endpoint(scan_id: str, room_name: str):
     """
     Returns the 3D room objects, spatial coordinates, and wall riddle without spending a visit (e.g. for inspection).
@@ -209,8 +300,7 @@ def get_room_endpoint(scan_id: str, room_name: str):
     }
 
 
-
-@app.post("/api/warmth")
+@app.post("/api/warmth", response_model=WarmthResponse)
 def get_warmth_endpoint(payload: WarmthRequest):
     """
     Throttled warmth calculation endpoint.
@@ -230,7 +320,7 @@ def get_warmth_endpoint(payload: WarmthRequest):
     )
 
 
-@app.post("/api/check")
+@app.post("/api/check", response_model=CheckResponse)
 def check_object_endpoint(payload: CheckRequest):
     """
     Evaluates clicked 3D object on the server.
@@ -248,8 +338,7 @@ def check_object_endpoint(payload: CheckRequest):
     return result
 
 
-
-@app.get("/api/report/{scan_id}")
+@app.get("/api/report/{scan_id}", response_model=HauntingReportResponse)
 def get_haunting_report_endpoint(scan_id: str):
     """
     Returns the comprehensive Haunting Report with found relics, missed relics, fix suggestions, and rank title.
@@ -260,8 +349,9 @@ def get_haunting_report_endpoint(scan_id: str):
     return report
 
 
-@app.post("/api/cache/refresh")
+@app.post("/api/cache/refresh", response_model=CacheRefreshResponse)
 def refresh_cache_endpoint():
     """Manually refreshes the offline sample cache."""
     cache = generate_and_save_sample_cache()
     return {"status": "refreshed", "cached_roles": list(cache.keys())}
+
