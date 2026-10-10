@@ -116,13 +116,20 @@ class AgnosticReaperDetector(BaseDetector):
 class AgnosticSkeletonDetector(BaseDetector):
     """
     Tier 1 Skeleton (The Code Judge):
-    Detects abandoned TODOs/FIXMEs, giant bloated files, missing README/tests, and weak commits.
+    Detects abandoned TODOs/FIXMEs in comments, giant bloated source files, missing README/tests, and weak commits.
     """
     name = "agnostic_skeleton_detector"
     role = RoleType.SKELETON
 
-    TODO_PATTERN = re.compile(r"""(?i)\b(TODO|FIXME|HACK|XXX)\b\s*[:\-]?(.*)""")
+    # Strict comment prefixes across various programming languages
+    COMMENT_PREFIX_PATTERN = re.compile(r"""^\s*(?://|#|--|\*|/\*+|<!--)\s*(.*)""")
+    TODO_TAG_PATTERN = re.compile(r"""\b(TODO|FIXME|HACK|XXX)\b(?:\s*[:\-]\s*(.*))?""")
     WEAK_COMMIT_MESSAGES = {"wip", "fix", "fixed", "update", "updates", "test", "asdf", "temp", "changes", "commit", "save"}
+
+    SOURCE_EXTENSIONS = {
+        ".py", ".js", ".jsx", ".ts", ".tsx", ".c", ".cpp", ".h", ".hpp",
+        ".go", ".rs", ".java", ".php", ".rb", ".cs", ".kt", ".swift", ".scala"
+    }
 
     def scan(self, repo_path: Path) -> List[Finding]:
         findings: List[Finding] = []
@@ -174,9 +181,18 @@ class AgnosticSkeletonDetector(BaseDetector):
             ))
             finding_counter += 1
 
-        # 3. Check for TODOs / FIXMEs and bloated files
+        # 3. Check for TODOs / FIXMEs (comments only) and bloated source files (code only)
         for file_path in files:
             rel_file = str(file_path.relative_to(repo_path)).replace("\\", "/")
+            ext = file_path.suffix.lower()
+
+            # Skip minified, bundle, generated, or non-source files
+            if (
+                rel_file.endswith(".min.js") or rel_file.endswith(".min.css")
+                or rel_file.endswith(".bundle.js") or "dist/" in rel_file
+            ):
+                continue
+
             try:
                 content = file_path.read_text(encoding="utf-8", errors="ignore")
             except Exception:
@@ -184,43 +200,51 @@ class AgnosticSkeletonDetector(BaseDetector):
 
             lines = content.splitlines()
 
-            # Oversized file check (> 350 lines)
-            if len(lines) > 350:
-                findings.append(Finding(
-                    id=f"skeleton_oversized_file_{finding_counter}",
-                    role=RoleType.SKELETON,
-                    language="generic",
-                    type="oversized_file",
-                    file=rel_file,
-                    line=1,
-                    snippet=f"File length: {len(lines)} lines",
-                    explanation=f"File is overly long ({len(lines)} lines), violating single responsibility principles.",
-                    suggestion="Split large modules into smaller, focused single-purpose components.",
-                    severity=FindingSeverity.LOW,
-                    confidence=FindingConfidence.CERTAIN
-                ))
-                finding_counter += 1
-
-            # TODO/FIXME check
-            for line_idx, line in enumerate(lines, start=1):
-                match = self.TODO_PATTERN.search(line)
-                if match:
-                    tag = match.group(1).upper()
-                    rest = match.group(2).strip()
+            # Oversized file check: ONLY for actual source-code files, NOT markdown/txt/json
+            if ext in self.SOURCE_EXTENSIONS:
+                is_test_file = any(t in rel_file.lower() for t in ["test", "spec", "fixture"])
+                # Source files > 400 lines (or test files > 700 lines)
+                threshold = 700 if is_test_file else 400
+                if len(lines) > threshold:
                     findings.append(Finding(
-                        id=f"skeleton_todo_{finding_counter}",
+                        id=f"skeleton_oversized_file_{finding_counter}",
                         role=RoleType.SKELETON,
                         language="generic",
-                        type="todo_comment",
+                        type="oversized_file",
                         file=rel_file,
-                        line=line_idx,
-                        snippet=line.strip()[:100],
-                        explanation=f"Unresolved {tag} marker left abandoned in codebase.",
-                        suggestion=f"Implement or resolve the technical debt in: {rest or tag}",
-                        severity=FindingSeverity.LOW,
+                        line=1,
+                        snippet=f"File length: {len(lines)} lines",
+                        explanation=f"Source file is overly long ({len(lines)} lines), violating modular architecture.",
+                        suggestion="Split large modules into smaller, single-purpose components.",
+                        severity=FindingSeverity.LOW if is_test_file else FindingSeverity.MEDIUM,
                         confidence=FindingConfidence.CERTAIN
                     ))
                     finding_counter += 1
+
+            # TODO/FIXME check: ONLY inside genuine comment lines
+            for line_idx, line in enumerate(lines, start=1):
+                comment_match = self.COMMENT_PREFIX_PATTERN.match(line)
+                if comment_match:
+                    comment_text = comment_match.group(1).strip()
+                    todo_match = self.TODO_TAG_PATTERN.search(comment_text)
+                    if todo_match:
+                        tag = todo_match.group(1).upper()
+                        rest = (todo_match.group(2) or "").strip()
+                        findings.append(Finding(
+                            id=f"skeleton_todo_{finding_counter}",
+                            role=RoleType.SKELETON,
+                            language="generic",
+                            type="todo_comment",
+                            file=rel_file,
+                            line=line_idx,
+                            snippet=line.strip()[:100],
+                            explanation=f"Unresolved {tag} comment left abandoned in codebase.",
+                            suggestion=f"Implement or resolve the technical debt in: {rest or tag}",
+                            severity=FindingSeverity.LOW,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+                        finding_counter += 1
+
 
         # 4. Check for weak git commit messages (if local repo contains .git)
         git_dir = repo_path / ".git"
