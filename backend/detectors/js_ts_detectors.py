@@ -75,3 +75,59 @@ class JSEmptyCatchDetector(BaseDetector):
                 print(f"[JSEmptyCatchDetector] Error scanning {file_path}: {e}")
 
         return findings
+
+
+class JSLooseEqualityDetector(BaseDetector):
+    """Detects loose equality (==, !=) comparisons that cause type coercion bugs."""
+    name = "js_loose_equality"
+    role = RoleType.GHOST
+
+    def scan(self, repo_path: Path) -> List[Finding]:
+        findings: List[Finding] = []
+        files = get_js_ts_files(repo_path)
+
+        for file_path in files:
+            try:
+                rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/")
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+
+                for line_idx, line in enumerate(lines, start=1):
+                    # Strip single-line comments
+                    code_part = re.sub(r'//.*$', '', line)
+                    if not code_part.strip():
+                        continue
+
+                    # Match loose equality (== or !=) but not strict (=== or !==) or arrow functions/assignments (=>, == null)
+                    # Look for [^!=]==[^=] or [^!]!=[^=]
+                    matches = list(re.finditer(r'(?<![!=])(==|!=)(?!=)', code_part))
+                    for m in matches:
+                        op = m.group(1)
+                        # Extract surrounding snippet
+                        start = max(0, m.start() - 15)
+                        end = min(len(code_part), m.end() + 15)
+                        snippet_part = code_part[start:end].strip()
+
+                        # Skip common idiomatic '== null' checks if present
+                        if "== null" in code_part or "!= null" in code_part:
+                            continue
+
+                        findings.append(Finding(
+                            id=f"js-loose-eq-{rel_path}-{line_idx}-{m.start()}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="loose_equality_comparison",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation=f"Loose equality operator '{op}' performs unintended JavaScript type coercion.",
+                            suggestion=f"Replace '{op}' with strict comparison '{op}=' to prevent unexpected type coercion.",
+                            severity=FindingSeverity.MEDIUM,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+                        break # Cap at 1 per line
+            except Exception as e:
+                print(f"[JSLooseEqualityDetector] Error scanning {file_path}: {e}")
+
+        return findings
+
