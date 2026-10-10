@@ -36,3 +36,7 @@ Thumbs.db
 temp_repos/
 temp_clones/
 cache/
+
+# Internal project tracking
+PROJECT_TRACKER.md
+
