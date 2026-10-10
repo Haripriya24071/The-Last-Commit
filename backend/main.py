@@ -4,8 +4,9 @@ The Last Commit — FastAPI Main Application & REST API Endpoints.
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any, List
 from detectors.base import RoleType
+
 from engine import (
     ingest_repository, cleanup_temp_repo, game_sessions,
     generate_and_save_sample_cache, load_sample_cache, log_event
@@ -119,68 +120,101 @@ class ScanStatusResponse(BaseModel):
 
 class MapViewResponse(BaseModel):
     scan_id: str
-    repo_target: str
+    repo_target: Optional[str] = "sample"
     role: str
-    fell_back: bool
+    fell_back: bool = False
     fallback_reason: Optional[str] = None
-    timing_metrics: Dict[str, float] = {}
-    role_presence: Dict[str, str] = {}
-    lantern_visits_left: int
-    lifelines_left: int
-    score: int
-    rooms: Dict[str, Any]
-    is_game_over: bool
+    is_suspiciously_clean: bool = False
+    timing_metrics: Dict[str, float] = Field(default_factory=dict)
+    role_presence: Dict[str, str] = Field(default_factory=dict)
+    lantern_visits_left: int = 4
+    lifelines_left: int = 4
+    score: int = 0
+    rooms: Dict[str, Any] = Field(default_factory=dict)
+    is_game_over: bool = False
 
 
 class EnterRoomResponse(BaseModel):
     is_valid: bool
     room_name: str
     lantern_visits_left: int
-    message: str
+    message: Optional[str] = None
+    room: Optional[Dict[str, Any]] = None
+    game_over: Optional[bool] = False
+    scan_id: Optional[str] = None
     error: Optional[str] = None
 
 
 class RoomDetailResponse(BaseModel):
     scan_id: str
-    room: Dict[str, Any]
+    room: Dict[str, Any] = Field(default_factory=dict)
 
 
 class WarmthResponse(BaseModel):
     warmth: float
-    quantized_level: int
-    nearest_distance: float
-    status: str
-    message: str
+    quantized_level: Optional[int] = 0
+    nearest_distance: Optional[float] = 0.0
+    status: Optional[str] = "chilly"
+    message: Optional[str] = None
+    has_relics: Optional[bool] = True
     cached: bool = False
 
 
 class CheckResponse(BaseModel):
-    is_relic: bool
-    object_id: str
-    score_awarded: int
-    total_score: int
-    lifelines_remaining: int
-    is_game_over: bool
+    is_real: Optional[bool] = False
+    is_relic: Optional[bool] = False
+    object_id: Optional[str] = None
+    score_awarded: Optional[int] = 0
+    total_score: Optional[int] = 0
+    current_score: Optional[int] = 0
+    lifelines_remaining: Optional[int] = 4
+    lifelines_left: Optional[int] = 4
+    is_game_over: Optional[bool] = False
+    game_over: Optional[bool] = False
+    relic: Optional[Dict[str, Any]] = None
     relic_info: Optional[Dict[str, Any]] = None
     jump_scare: Optional[Dict[str, Any]] = None
     already_purged: Optional[bool] = False
+    message: Optional[str] = None
     error: Optional[str] = None
+
+
+
 
 
 class HauntingReportResponse(BaseModel):
     scan_id: str
-    investigator_rank: str
-    score: int
-    lifelines_remaining: int
-    is_game_finished: bool
-    relics_found: List[Dict[str, Any]]
-    relics_missed: List[Dict[str, Any]]
-    total_planted_anomalies: int
+    role: Optional[str] = "ghost"
+    score: int = 0
+    lifelines_remaining: int = 4
+    rank_title: Optional[str] = None
+    rank_description: Optional[str] = None
+    total_relics_in_mansion: Optional[int] = 0
+    relics_found_count: Optional[int] = 0
+    relics_found: List[Dict[str, Any]] = Field(default_factory=list)
+    relics_missed: List[Dict[str, Any]] = Field(default_factory=list)
+    is_game_finished: bool = False
+    is_suspiciously_clean: bool = False
 
 
 class CacheRefreshResponse(BaseModel):
     status: str
-    cached_roles: List[str]
+    cached_roles: List[str] = Field(default_factory=list)
+
+
+
+# Rebuild models for Python 3.14 runtime evaluation
+RootResponse.model_rebuild()
+HealthResponse.model_rebuild()
+ScanStatusResponse.model_rebuild()
+MapViewResponse.model_rebuild()
+EnterRoomResponse.model_rebuild()
+RoomDetailResponse.model_rebuild()
+WarmthResponse.model_rebuild()
+CheckResponse.model_rebuild()
+HauntingReportResponse.model_rebuild()
+CacheRefreshResponse.model_rebuild()
+
 
 
 @app.get("/", response_model=RootResponse)

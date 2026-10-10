@@ -82,6 +82,7 @@ class GameSession:
         """Returns the cursed mansion map view without revealing real/decoy answers."""
         return {
             "scan_id": self.scan_id,
+            "repo_target": self.repo_target,
             "role": self.role.value,
             "role_presence": self.role_presence,
             "fell_back": self.fell_back,
@@ -90,9 +91,11 @@ class GameSession:
             "timing_metrics": self.timing_metrics,
             "lantern_visits_left": self.lantern_visits_remaining,
             "lifelines_left": self.lifelines_remaining,
+            "score": self.score,
             "is_game_over": self.is_game_over,
             "rooms": self.rooms_public
         }
+
 
     def spend_lantern_visit(self, room_name: str) -> Dict[str, Any]:
         """
