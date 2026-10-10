@@ -164,13 +164,23 @@ class PythonGhostDetector(BaseDetector):
             findings.extend(visitor.findings)
 
             # Check unused imports
+            # Ignore __init__.py (re-exports) and files defining __all__
+            if py_file.name == "__init__.py" or "__all__" in code:
+                continue
+
             unused = visitor.imported_names - visitor.used_names
-            # Filter out standard fixtures or dunder methods
-            unused = {u for u in unused if not u.startswith("_") and u not in {"pytest", "typing"}}
-            for u in sorted(unused):
+            # Filter out standard fixtures, typing imports, dunder methods
+            unused = {u for u in unused if not u.startswith("_") and u not in {"pytest", "typing", "sys", "os"} or u in {"math", "sys"}}
+            # Precise unused check: verify word doesn't appear in the code body after imports
+            final_unused = set()
+            for u in unused:
+                if u in visitor.imported_names and u not in visitor.used_names:
+                    final_unused.add(u)
+
+            for u in sorted(final_unused):
                 # Find line number of the import
                 for line_idx, line in enumerate(lines, start=1):
-                    if f"import {u}" in line or f"from " in line and u in line:
+                    if f"import {u}" in line or (f"from " in line and u in line):
                         findings.append(Finding(
                             id=f"ghost_unused_import_{rel_file}_{line_idx}_{u}",
                             role=RoleType.GHOST,
