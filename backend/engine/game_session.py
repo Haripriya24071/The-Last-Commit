@@ -32,13 +32,16 @@ class GameSession:
         repo_target: str,
         role: RoleType,
         fallback_reason: Optional[str] = None,
-        timing_metrics: Optional[Dict[str, float]] = None
+        timing_metrics: Optional[Dict[str, float]] = None,
+        role_presence: Optional[Dict[str, str]] = None
     ):
         self.scan_id = scan_id
         self.repo_target = repo_target
         self.role = role
         self.fallback_reason = fallback_reason
+        self.fell_back: bool = fallback_reason is not None
         self.timing_metrics = timing_metrics or {}
+        self.role_presence = role_presence or {"ghost": "none", "reaper": "none", "skeleton": "none"}
         self.created_at = time.time()
         
         self.findings: List[Finding] = []
@@ -63,14 +66,44 @@ class GameSession:
         return {
             "scan_id": self.scan_id,
             "role": self.role.value,
-            "is_suspiciously_clean": self.is_suspiciously_clean,
+            "role_presence": self.role_presence,
+            "fell_back": self.fell_back,
             "fallback_reason": self.fallback_reason,
+            "is_suspiciously_clean": self.is_suspiciously_clean,
             "timing_metrics": self.timing_metrics,
             "lantern_visits_left": self.lantern_visits_remaining,
             "lifelines_left": self.lifelines_remaining,
             "is_game_over": self.is_game_over,
             "rooms": self.rooms_public
         }
+
+    def spend_lantern_visit(self, room_name: str) -> Dict[str, Any]:
+        """
+        Deducts one lantern visit when entering a room from the 2D blueprint map.
+        Rejects if lantern visits are exhausted.
+        """
+        if self.lantern_visits_remaining <= 0 or self.is_game_over:
+            self.is_game_over = True
+            return {"error": "Lantern oil depleted! No visits remaining.", "is_valid": False, "lantern_visits_left": 0, "game_over": True}
+
+        if room_name not in self.rooms_public:
+            return {"error": f"Room '{room_name}' does not exist", "is_valid": False}
+
+        self.lantern_visits_remaining = max(0, self.lantern_visits_remaining - 1)
+        if self.lantern_visits_remaining == 0 and len(self.found_relics) < len(self.findings):
+            # If all visits used without finding all relics, house claims victory
+            self.is_game_over = True
+
+        return {
+            "scan_id": self.scan_id,
+            "room_name": room_name,
+            "room": self.rooms_public[room_name],
+            "lantern_visits_left": self.lantern_visits_remaining,
+            "lifelines_left": self.lifelines_remaining,
+            "game_over": self.is_game_over,
+            "is_valid": True
+        }
+
 
     def calculate_warmth(self, room_name: str, x: float, y: float, z: float) -> Dict[str, Any]:
         """
@@ -163,9 +196,23 @@ class SessionStore:
         scan_id = f"mansion_{uuid.uuid4().hex[:8]}"
         metrics = timing_metrics or {}
 
-        # 1. Execute Scanner Detectors for Chosen Role with timing
+        # 1. Measure all 3 roles to populate presence levels
         t_detect = time.time()
-        findings = default_scanner.scan_repository(repo_path, role=role)
+        role_findings: Dict[RoleType, List[Finding]] = {}
+        role_presence: Dict[str, str] = {}
+        total_findings_all_roles = 0
+
+        for r in [RoleType.GHOST, RoleType.REAPER, RoleType.SKELETON]:
+            rf = default_scanner.scan_repository(repo_path, role=r)
+            role_findings[r] = rf
+            total_findings_all_roles += len(rf)
+            if len(rf) >= 3:
+                role_presence[r.value] = "strong"
+            elif len(rf) >= 1:
+                role_presence[r.value] = "faint"
+            else:
+                role_presence[r.value] = "none"
+
         metrics["detector_scan_sec"] = round(time.time() - t_detect, 3)
 
         session = GameSession(
@@ -173,11 +220,13 @@ class SessionStore:
             repo_target=repo_target,
             role=role,
             fallback_reason=fallback_reason,
-            timing_metrics=metrics
+            timing_metrics=metrics,
+            role_presence=role_presence
         )
 
-        # 2. Minimum-findings Fallback
-        # If fewer than 3 findings, add milder Tier 1 findings (Agnostic Skeleton / Reaper)
+        findings = role_findings.get(role, [])
+
+        # 2. Minimum-findings Fallback for chosen role
         if len(findings) < 3:
             all_agnostic = default_scanner.scan_repository(repo_path, role=None)
             for f in all_agnostic:
@@ -186,8 +235,8 @@ class SessionStore:
                 if len(findings) >= 3:
                     break
 
-        # 3. Suspiciously clean check
-        if len(findings) < 3:
+        # 3. Suspiciously clean check: ONLY if entire repo across ALL roles has < 3 findings
+        if total_findings_all_roles < 3:
             session.is_suspiciously_clean = True
 
         session.findings = findings
@@ -222,6 +271,7 @@ class SessionStore:
 
         self._sessions[scan_id] = session
         return session
+
 
 
     def get_session(self, scan_id: str) -> Optional[GameSession]:
