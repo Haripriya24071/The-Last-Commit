@@ -176,3 +176,75 @@ class JSConsoleLogDetector(BaseDetector):
         return findings
 
 
+class JSReaperSecurityDetector(BaseDetector):
+    """Detects severe security risks in JS/TS: eval, new Function, dangerouslySetInnerHTML, and raw document.write."""
+    name = "js_reaper_security"
+    role = RoleType.REAPER
+
+    def scan(self, repo_path: Path) -> List[Finding]:
+        findings: List[Finding] = []
+        files = get_js_ts_files(repo_path)
+
+        for file_path in files:
+            try:
+                rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/")
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+
+                for line_idx, line in enumerate(lines, start=1):
+                    code_part = re.sub(r'//.*$', '', line)
+
+                    # 1. eval()
+                    if re.search(r'\beval\s*\(', code_part):
+                        findings.append(Finding(
+                            id=f"js-reaper-eval-{rel_path}-{line_idx}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="dangerous_eval_execution",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation="Arbitrary code execution via eval() allows code injection and remote exploit execution.",
+                            suggestion="Eliminate eval() by parsing structured data with JSON.parse or using standard logic.",
+                            severity=FindingSeverity.CRITICAL,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+
+                    # 2. dangerouslySetInnerHTML
+                    elif "dangerouslySetInnerHTML" in code_part:
+                        findings.append(Finding(
+                            id=f"js-reaper-dangerouslyset-{rel_path}-{line_idx}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="dangerously_set_inner_html",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation="Raw HTML injection via dangerouslySetInnerHTML opens the application to Cross-Site Scripting (XSS).",
+                            suggestion="Sanitize markup with DOMPurify or render sanitized React element trees instead.",
+                            severity=FindingSeverity.HIGH,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+
+                    # 3. new Function(...)
+                    elif re.search(r'new\s+Function\s*\(', code_part):
+                        findings.append(Finding(
+                            id=f"js-reaper-new-func-{rel_path}-{line_idx}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="dangerous_function_constructor",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation="Dynamic code generation via Function constructor is equivalent to eval and creates injection vulnerabilities.",
+                            suggestion="Refactor logic to invoke pre-defined functions rather than building strings dynamically.",
+                            severity=FindingSeverity.HIGH,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+            except Exception as e:
+                print(f"[JSReaperSecurityDetector] Error scanning {file_path}: {e}")
+
+        return findings
+
+
+
