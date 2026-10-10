@@ -51,6 +51,11 @@ class CheckRequest(BaseModel):
     object_id: str = Field(description="ID of the clicked 3D object")
 
 
+class EnterRoomRequest(BaseModel):
+    scan_id: str = Field(description="Active scan session identifier")
+    room_name: str = Field(description="Mansion room to enter: library, cellar, chapel, study, attic")
+
+
 class WarmthRequest(BaseModel):
     scan_id: str = Field(description="Active scan session identifier")
     room_name: str = Field(description="Current mansion room name")
@@ -110,10 +115,28 @@ def get_map_endpoint(scan_id: str):
     return session.to_map_view()
 
 
+@app.post("/api/enter-room")
+def enter_room_endpoint(payload: EnterRoomRequest):
+    """
+    Spends one lantern visit and enters the requested 3D room.
+    Rejects if lantern visits are depleted.
+    """
+    session = game_sessions.get_session(payload.scan_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Scan session not found")
+
+    room_name_clean = payload.room_name.lower().strip()
+    result = session.spend_lantern_visit(room_name_clean)
+    if not result.get("is_valid"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Cannot enter room"))
+
+    return result
+
+
 @app.get("/api/room/{scan_id}/{room_name}")
 def get_room_endpoint(scan_id: str, room_name: str):
     """
-    Returns the 3D room objects, spatial coordinates, and wall riddle.
+    Returns the 3D room objects, spatial coordinates, and wall riddle without spending a visit (e.g. for inspection).
     Real vs decoy answers are kept secret on the server.
     """
     session = game_sessions.get_session(scan_id)
@@ -128,6 +151,7 @@ def get_room_endpoint(scan_id: str, room_name: str):
         "scan_id": scan_id,
         "room": session.rooms_public[room_name_clean]
     }
+
 
 
 @app.post("/api/warmth")
