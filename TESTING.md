@@ -1,6 +1,6 @@
 # The Last Commit — Testing & Verification Guide
 
-This guide provides the exact commands to launch the backend and frontend services and execute a full end-to-end playthrough of the Layer 1 haunted mansion room.
+This guide provides the exact commands to launch the backend and frontend services and execute a full end-to-end playthrough of the Layer 2 Cursed Mansion Blueprint Map and 3D haunted rooms.
 
 ---
 
@@ -29,12 +29,22 @@ npm run dev
 
 ## 🧪 2. Automated Test Suites
 
-### Backend Pytest Suite (19 tests)
+### Backend Pytest Suite (23 tests)
 ```bash
-backend\.venv\Scripts\pytest backend\test_engine.py backend\test_health.py backend\test_scanner.py backend\test_live_repos.py -v
+backend\.venv\Scripts\pytest -v
 ```
 
-### Frontend Build Verification
+All 23 tests verify:
+- Scanner filtering (source code only for oversized files, comments-only for TODO detector)
+- Finding capping (max 3 per type/role, max 10 total)
+- Role presence calculations (`strong`, `faint`, `none`)
+- Lantern visits tracking & spending via `POST /api/enter-room` (rejection after 4 visits)
+- `POST /api/warmth` quantization (5 levels) and coordinate clamping
+- Mid-game Haunting Report privacy (`relics_missed` hidden until game over/victory)
+- Windows cleanup regression test for read-only `.git` removal
+- Idempotent relic scoring and session caching
+
+### Frontend Production Build
 ```bash
 cd frontend
 npm run build
@@ -42,33 +52,31 @@ npm run build
 
 ---
 
-## 🕹️ 3. Full Playthrough Testing Checklist (Layer 1 Playable)
+## 🕹️ 3. Full Playthrough Testing Checklist (Phase 5: Cursed Map Layer)
 
-Follow this manual checklist to verify the full single-room gameplay loop:
+Follow this manual checklist to verify the full multi-room game loop:
 
-1. **Room Initial Load**:
+1. **Cursed Mansion Blueprint (Map View)**:
    - Open `http://127.0.0.1:5173/`.
-   - Verify the procedural 3D room loads smoothly with stone walls, floor fog, flickering torchlights, and 4 glowing candles in the top HUD.
-   - Verify floating code filename badges (e.g. `src/core.py`, `src/parser.py`) appear above 3D props.
-2. **First-Person Controls & Audio Unlock**:
-   - Click anywhere on the screen to enter Pointer Lock mode.
-   - Verify WASD walks around the room, mouse controls camera rotation, and the initial click un-mutes the Web Audio context.
-3. **Heartbeat Warmth Proximity Probing**:
-   - Walk close to a 3D object.
-   - Verify `/api/warmth` returns a quantized warmth value (0.0 to 1.0) and the heartbeat audio pulse speeds up when near un-cleansed bugs.
-4. **Click a Real Object (Relic Discovery)**:
-   - Click an object containing a planted bug.
-   - Verify celestial chime sound plays, score increases by `+100`, and the **Relic Discovery Modal** pops up with the code snippet, reason, and fix suggestion.
-   - Click *"Continue Code Hunt"* and verify the bug is listed inside the **Cleanse Relics Drawer** (`✨ RELICS: 1`).
-5. **Click a Decoy Object (Jump Scare & Candle Loss)**:
-   - Click a clean decoy object.
-   - Verify 1 candle flame is snuffed out (decrements from 4 to 3), and one of 6 non-repeating 1-second jump scares triggers with sound.
-6. **Accessibility Toggle**:
-   - Click `👻 FULL SCARES` to toggle to `🛡️ MILD SCARES`.
-   - Click another decoy; verify it only plays a subtle screen flicker and low thud without violent shaking.
-7. **Soft Ending Screen (Defeat)**:
-   - Click decoys until all 4 candles are extinguished.
-   - Verify the *"THE HOUSE WINS THIS TIME"* modal appears with final stats and a *"🔄 Re-light Candles & Retry"* button.
-8. **Haunting Report Payoff**:
-   - Click *"📜 View Haunting Report"* (or the bottom bar button).
-   - Verify the report displays your final rank (*Ghost Whisperer*, *Haunted Soul*, or *Fresh Meat*), cleansed relics, and uncovers previously hidden missed relics only after the game is finished.
+   - Verify the 2D Blueprint Map loads with the 5 rooms: *The Grand Library*, *The Forgotten Crypt*, *The Corrupted Chapel*, *The Alchemist's Study*, and *The Dust-Choked Attic*.
+   - Verify the top bar displays 4 Lantern Visits (`🏮 🏮 🏮 🏮`), 4 Candles (`🕯️ 🕯️ 🕯️ 🕯️`), and Score.
+   - Verify each room shows its atmospheric whisper signal (*Cold Spot*, *Scratching*, *Flickering Torches*, *Eerie Silence*) without leaking bug counts or solutions.
+2. **Role Selection & Dynamic Presence**:
+   - Check the role buttons (*Ghost*, *Reaper*, *Skeleton*).
+   - Verify each card shows a dynamic presence level (`STRONG`, `FAINT`, `NONE`) based on actual repository findings without raw numbers.
+3. **Spend a Lantern Visit to Enter a 3D Room**:
+   - Click *"🏮 Enter Room (Uses 1 Visit)"* on any room card (e.g. *The Grand Library*).
+   - Verify the client calls `POST /api/enter-room`, lantern visits decrement to 3, and you smoothly enter the 3D first-person room view.
+4. **Return to Blueprint Map Without Spending a Visit**:
+   - In the 3D room, click the top-left *"🗺️ RETURN TO MAP (Esc)"* button or press the `Escape` key.
+   - Verify you return to the 2D Blueprint Map with your lantern visits count intact (still 3).
+5. **Relic Persistence Across Rooms**:
+   - Enter a room, locate a corrupted relic object, and click it to purge it.
+   - Return to the Blueprint Map; verify that room's card now displays `✨ 1 Cleaned` and that found relics stay cleansed across room transitions.
+6. **Lantern Depletion & Soft Game Over**:
+   - Enter rooms until all 4 lantern visits are exhausted.
+   - Verify `POST /api/enter-room` rejects further room entries, and the *"LANTERN OIL DEPLETED!"* banner appears offering the Haunting Report.
+7. **Haunting Report Privacy & Payoff**:
+   - Click *"📜 Haunting Report"*.
+   - Verify mid-game reports hide missed relics, while completed reports reveal your final rank and all un-cleansed code defects.
+
