@@ -8,15 +8,15 @@
 
 | Metric / Category | Status | Details |
 | :--- | :--- | :--- |
-| **Current Active Phase** | `Phase 3: 3D Room` | Setting up 3D first-person room, atmospheric lights, fog, and interactive objects |
-| **Completed Phases** | `Phase 0, Phase 1, Phase 2` | Scaffolding, Detectors, Ingester, Game Builder, REST APIs (`/scan`, `/map`, `/room`, `/check`, `/report`), Offline Cache |
-| **Next Up** | `Phase 4: Game Logic` | Connect object clicks to check API, lifelines, score, and jump scares |
-| **Overall Completion** | `45%` | Phase 2 (15/15 tests) verified & passing |
+| **Current Active Phase** | `Phase 4: Game Logic` | Core game loop, score/relic modal, 6 jump scares, lifelines, soft ending |
+| **Completed Phases** | `Phase 0, Phase 1, Phase 2, Phase 3` | Scaffolding, Detectors, Ingester, API Engine, 3D Procedural Room, FPS Controls, HUD, Audio Engine |
+| **Next Up** | `Phase 5: Cursed Map Layer` | 2D interactive blueprint mansion map with whispers and 4 lantern visits |
+| **Overall Completion** | `60%` | Phase 3 (3D First-Person 60FPS Room) verified & compiling |
 | **Architecture Mode** | `2-Layer Design` | Layer 1 (Single Room Core Loop) ➡️ Layer 2 (Full Mansion Map) |
 
 ```
 [Phase 0: Setup] ➔ [Phase 1: Scanner] ➔ [Phase 2: API] ➔ [Phase 3: 3D Room] ➔ [Phase 4: Game Logic] ➔ [Phase 5: Map] ➔ [Phase 6: Frame] ➔ [Phase 7: Polish] ➔ [Phase 8: Rehearse]
-      🟢                 🟢                  🟢                🟡                  ⚪                 ⚪              ⚪               ⚪                ⚪
+      🟢                 🟢                  🟢                🟢                  🟡                 ⚪              ⚪               ⚪                ⚪
 ```
 
 ---
@@ -142,12 +142,13 @@
 - [x] Implemented offline local cache (`backend/cache/sample_cache.json`) for zero-network live audition reliability.
 - [x] Automated test suite (`backend/test_engine.py`) verified (15/15 tests passing).
 
-### 🔲 Phase 3: 3D First-Person Room (Est: 6h)
-- [ ] Set up Three.js / React Three Fiber / Drei canvas.
-- [ ] Implement first-person controls (WASD + mouse look / pointer lock).
-- [ ] Build gothic atmospheric environment (dark fog, flickering point lights, moody textures).
-- [ ] Spawn 4-6 interactive glowing 3D objects with floating file names.
-- [ ] Add raycasting / pointer interaction for object selection.
+### ✅ Phase 3: 3D First-Person Room (Completed)
+- [x] Set up Three.js / React Three Fiber Canvas with gothic lighting and volumetric horror fog (`ProceduralRoom.jsx`).
+- [x] Implemented First-Person controls (WASD movement + mouse look with Pointer Lock & audio unlock integration).
+- [x] Built 8 procedural low-poly 3D props (`chest`, `portrait`, `mirror`, `clock`, `skull`, `cauldron`, `tome`) running at 60fps.
+- [x] Spawned interactive 3D objects dynamically positioned via `/api/room` coordinates with floating filename tags.
+- [x] Implemented raycasting / pointer hover glow & heartbeat audio cue.
+- [x] Added `⚡ FAST (60FPS)` / `✨ HIGH` low-quality toggle and Dev Mode room switcher.
 
 ### 🔲 Phase 4: Core Game Loop (Layer 1 Playable) (Est: 4h)
 - [ ] Implement Zustand game store (lifelines, score, found relics, current room, visited rooms).
@@ -191,15 +192,15 @@
 - [x] Initialized project roadmap and master tracking ledger `PROJECT_TRACKER.md`.
 - [x] Captured all specifications from Turing Club Audition 2026 design briefing.
 - [x] **Phase 0**: Project scaffolding (`backend/`, `frontend/`, `sample_repo/`, `assets/`, `CREDITS.md`).
-- [x] **Phase 1**: Language-neutral `Finding` schema, Tier 1 Agnostic detectors, Python AST plugins, room mapper, and 10/10 passing scanner tests.
-- [x] **Phase 2**: FastAPI Backend Engine (`/scan`, `/map`, `/room`, `/check`, `/report`), shallow clone `--depth 50` ingester, dynamic room balancing, server-side real/decoy evaluator, fallback for suspiciously clean repos, and offline local cache (`backend/cache/sample_cache.json`).
-- [x] Verified zero false-positives on clean decoy files and robust error-handling on broken syntax files (15/15 passing tests).
+- [x] **Phase 1**: Language-neutral `Finding` schema, Tier 1 Agnostic detectors, Python AST plugins, room mapper, and passing scanner tests.
+- [x] **Phase 2**: FastAPI Backend Engine (`/scan`, `/map`, `/room`, `/check`, `/report`), shallow clone `--depth 50` ingester, GitHub API size pre-check, dynamic room balancing, server-side real/decoy evaluator, fallback for suspiciously clean repos, and offline local cache.
+- [x] Verified live scan on public Python (`pallets/click`) and JavaScript (`expressjs/express`) repos.
+- [x] **Phase 3**: 3D First-Person Room (`ProceduralRoom.jsx`, `Props3D.jsx`, `FirstPersonController.jsx`, `RoomHUD.jsx`, `AudioEngine.js`), WASD navigation, pointer lock with audio context unlock, low-quality toggle, and dev mode room switcher.
 
 ### ⏳ In Progress
-- [ ] **Phase 3**: 3D First-Person Room (Three.js / React Three Fiber / Drei, atmospheric lighting, fog, first-person controls, 3D room objects).
+- [ ] **Phase 4**: Core Game Loop (Layer 1 Playable) — Connect object clicks to check API, lifelines, score, and 6 jump scares.
 
 ### 🔜 What's Next
-- Build the 3D room canvas and first-person navigation controls (WASD + mouse look / pointer lock).
-- Place interactive 3D models (`chest`, `portrait`, `mirror`, `clock`, `skull`, `cauldron`) dynamically using room API data.
-- Add atmospheric point lights, dark fog, flickering candles, and gothic materials.
-- Implement raycasting / pointer hover & click interaction for 3D objects.
+- Build the jump scare animation sequences (Door Slam, Ghost Face, Lights Out, Skeleton Pop-up, Mirror Shatter, Eerie Laughter).
+- Connect soft ending ("The house wins this time" retry modal when 4 candles extinguished).
+- Verify Checkpoint Layer 1: Standalone complete playable single-room hunt.
