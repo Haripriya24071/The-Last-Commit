@@ -131,7 +131,35 @@ def scan_repository_endpoint(payload: ScanRequest):
         cleanup_temp_repo(repo_path, is_temp)
 
 
+@app.get("/api/scan/status/{scan_id}")
+def get_scan_status_endpoint(scan_id: str):
+    """
+    Returns the real-time progress status and pipeline stage of a scan session.
+    """
+    session = game_sessions.get_session(scan_id)
+    if not session:
+        return {
+            "scan_id": scan_id,
+            "status": "not_found",
+            "progress_percent": 0,
+            "current_phase": "unknown",
+            "message": "Session not found or expired"
+        }
+
+    return {
+        "scan_id": scan_id,
+        "status": "ready",
+        "progress_percent": 100,
+        "current_phase": "mansion_constructed",
+        "role": session.role.value,
+        "fell_back": session.fell_back,
+        "created_at": session.created_at,
+        "message": "The cursed estate is ready for investigation."
+    }
+
+
 @app.get("/api/map/{scan_id}")
+
 def get_map_endpoint(scan_id: str):
     """
     Returns the cursed mansion map with 5 rooms and whisper signals.
