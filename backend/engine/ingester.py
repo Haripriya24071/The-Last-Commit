@@ -94,6 +94,36 @@ def safe_remove_directory(path: Path):
     shutil.rmtree(path, onexc=on_error)
 
 
+def evict_old_repo_cache(max_age_hours: float = 24.0, max_cache_dirs: int = 15):
+    """
+    Evicts stale cached clone directories older than max_age_hours or if total cache exceeds max_cache_dirs.
+    """
+    if not CACHE_DIR.exists():
+        return
+
+    now = time.time()
+    max_age_sec = max_age_hours * 3600
+    cached_dirs = [d for d in CACHE_DIR.iterdir() if d.is_dir()]
+
+    # 1. Evict directories older than max_age
+    for d in cached_dirs:
+        try:
+            mtime = d.stat().st_mtime
+            if (now - mtime) > max_age_sec:
+                safe_remove_directory(d)
+        except Exception:
+            pass
+
+    # 2. LRU count limit eviction
+    remaining_dirs = [d for d in CACHE_DIR.iterdir() if d.is_dir()]
+    if len(remaining_dirs) > max_cache_dirs:
+        # Sort oldest mtime first
+        remaining_dirs.sort(key=lambda d: d.stat().st_mtime if d.exists() else 0)
+        for d in remaining_dirs[:len(remaining_dirs) - max_cache_dirs]:
+            safe_remove_directory(d)
+
+
+
 def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict[str, float]]:
     """
     Ingests a repository for scanning with precise timing logs and robust local caching.
@@ -127,7 +157,9 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
 
     # 4. Fast Cache Check: Check if repository was already successfully cloned with source files
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    evict_old_repo_cache()
     cached_repo_dir = CACHE_DIR / f"{owner}_{repo_name}"
+
     
     # Valid cache requires both .git and actual source files
     if cached_repo_dir.exists() and (cached_repo_dir / ".git").exists():
