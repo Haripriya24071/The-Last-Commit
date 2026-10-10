@@ -337,6 +337,105 @@ def test_distinct_relic_sets_per_role_on_sample():
     assert ghost_relic_types != skeleton_relic_types
 
 
+# 17. JS/TS Detector Suite Tests
+def test_js_empty_catch_detector(tmp_path):
+    """Verify JSEmptyCatchDetector flags empty catch blocks."""
+    from detectors.js_ts_detectors import JSEmptyCatchDetector
+    js_file = tmp_path / "handler.js"
+    js_file.write_text("try { doSomething(); } catch (err) {}\n")
+    
+    detector = JSEmptyCatchDetector()
+    findings = detector.scan(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].type == "empty_catch_block"
+    assert findings[0].line == 1
+
+
+def test_js_loose_equality_detector(tmp_path):
+    """Verify JSLooseEqualityDetector flags == and != while ignoring === and != null."""
+    from detectors.js_ts_detectors import JSLooseEqualityDetector
+    js_file = tmp_path / "auth.js"
+    js_file.write_text("if (role == 'admin') { allow(); }\nif (val === 10) {}\nif (x == null) {}\n")
+    
+    detector = JSLooseEqualityDetector()
+    findings = detector.scan(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].type == "loose_equality_comparison"
+    assert "==" in findings[0].snippet
+
+
+def test_js_console_log_detector(tmp_path):
+    """Verify JSConsoleLogDetector flags console.log in non-test source files."""
+    from detectors.js_ts_detectors import JSConsoleLogDetector
+    src_file = tmp_path / "app.js"
+    src_file.write_text("console.log('debugging user data:', user);\n")
+    
+    detector = JSConsoleLogDetector()
+    findings = detector.scan(tmp_path)
+    assert len(findings) == 1
+    assert findings[0].type == "leftover_console_log"
+
+
+def test_js_reaper_security_detector(tmp_path):
+    """Verify JSReaperSecurityDetector flags eval, dangerouslySetInnerHTML, and new Function."""
+    from detectors.js_ts_detectors import JSReaperSecurityDetector
+    vuln_file = tmp_path / "component.jsx"
+    vuln_file.write_text("""
+    eval(untrustedInput);
+    <div dangerouslySetInnerHTML={{ __html: userMarkup }} />
+    const dynamicFn = new Function('a', 'b', 'return a + b');
+    """)
+    
+    detector = JSReaperSecurityDetector()
+    findings = detector.scan(tmp_path)
+    types = {f.type for f in findings}
+    assert "dangerous_eval_execution" in types
+    assert "dangerously_set_inner_html" in types
+    assert "dangerous_function_constructor" in types
+
+
+def test_ts_type_bypass_detector(tmp_path):
+    """Verify TSTypeBypassDetector flags @ts-ignore and unconstrained any."""
+    from detectors.js_ts_detectors import TSTypeBypassDetector
+    ts_file = tmp_path / "service.ts"
+    ts_file.write_text("""
+    // @ts-ignore
+    const data: any = parsePayload();
+    """)
+    
+    detector = TSTypeBypassDetector()
+    findings = detector.scan(tmp_path)
+    types = {f.type for f in findings}
+    assert "typescript_ts_ignore_bypass" in types
+    assert "typescript_overuse_of_any" in types
+
+
+def test_js_complexity_detector(tmp_path):
+    """Verify JSComplexityDetector flags deeply nested code blocks."""
+    from detectors.js_ts_detectors import JSComplexityDetector
+    nested_file = tmp_path / "nested.js"
+    nested_file.write_text("""
+    function processTree() {
+        if (a) {
+            if (b) {
+                for (let i = 0; i < 10; i++) {
+                    if (c) {
+                        if (d) {
+                            console.log(i);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """)
+    
+    detector = JSComplexityDetector()
+    findings = detector.scan(tmp_path)
+    assert any(f.type == "deeply_nested_block" for f in findings)
+
+
+
 
 
 
