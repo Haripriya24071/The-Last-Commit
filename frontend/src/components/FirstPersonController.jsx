@@ -73,6 +73,9 @@ export default function FirstPersonController() {
     }
   }, [])
 
+  const updateWarmth = useGameStore((state) => state.updateWarmth)
+  const lastWarmthCheck = useRef(0)
+
   useFrame((state, delta) => {
     if (!controlsRef.current?.isLocked) return
 
@@ -95,10 +98,17 @@ export default function FirstPersonController() {
     controlsRef.current.moveRight(-velocity.current.x * delta)
     controlsRef.current.moveForward(-velocity.current.z * delta)
 
-    // Keep player within room bounding box (-6m to 6m)
+    // Keep player within room bounding box (-5.8m to 5.8m)
     camera.position.x = THREE.MathUtils.clamp(camera.position.x, -5.8, 5.8)
     camera.position.z = THREE.MathUtils.clamp(camera.position.z, -5.8, 5.8)
     camera.position.y = 1.6 // Eye height
+
+    // Throttle /api/warmth calls to once every 400ms
+    const now = performance.now()
+    if (now - lastWarmthCheck.current > 400) {
+      lastWarmthCheck.current = now
+      updateWarmth(camera.position.x, camera.position.y, camera.position.z)
+    }
   })
 
   return (
@@ -115,3 +125,4 @@ export default function FirstPersonController() {
     />
   )
 }
+
