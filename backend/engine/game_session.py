@@ -26,6 +26,22 @@ SESSION_EXPIRY_SECONDS = 7200  # 2 hours
 
 
 class GameSession:
+    """
+    Encapsulates the state of an active mansion investigation session.
+
+    Attributes:
+        scan_id (str): Unique deterministic session identifier (e.g. 'mansion_abc123').
+        repo_target (str): Target repository URL or 'sample'.
+        role (RoleType): Active character role (Ghost, Reaper, or Skeleton).
+        fallback_reason (Optional[str]): Explanation if fallen back to the cursed sample.
+        timing_metrics (Dict[str, float]): Profiling duration in seconds for clone, AST, and room layout.
+        role_presence (Dict[str, str]): Signal strength ('strong', 'faint', 'none') for all 3 roles.
+        findings (List[Finding]): Real bugs/smells assigned to this session.
+        lifelines_remaining (int): Candle count (starts at 4).
+        lantern_visits_remaining (int): Maximum room visit limit (starts at 4).
+        score (int): Accumulated investigator points.
+        is_game_over (bool): Flag indicating victory or candle depletion.
+    """
     def __init__(
         self,
         scan_id: str,
@@ -34,15 +50,15 @@ class GameSession:
         fallback_reason: Optional[str] = None,
         timing_metrics: Optional[Dict[str, float]] = None,
         role_presence: Optional[Dict[str, str]] = None
-    ):
-        self.scan_id = scan_id
-        self.repo_target = repo_target
-        self.role = role
-        self.fallback_reason = fallback_reason
+    ) -> None:
+        self.scan_id: str = scan_id
+        self.repo_target: str = repo_target
+        self.role: RoleType = role
+        self.fallback_reason: Optional[str] = fallback_reason
         self.fell_back: bool = fallback_reason is not None
-        self.timing_metrics = timing_metrics or {}
-        self.role_presence = role_presence or {"ghost": "none", "reaper": "none", "skeleton": "none"}
-        self.created_at = time.time()
+        self.timing_metrics: Dict[str, float] = timing_metrics or {}
+        self.role_presence: Dict[str, str] = role_presence or {"ghost": "none", "reaper": "none", "skeleton": "none"}
+        self.created_at: float = time.time()
         
         self.findings: List[Finding] = []
         self.is_suspiciously_clean: bool = False
@@ -60,6 +76,7 @@ class GameSession:
         # Warmth rate-limiting & caching
         self.last_warmth_time: float = 0.0
         self.last_warmth_result: Dict[str, Any] = {"warmth": 0.0, "has_relics": True}
+
 
     def to_map_view(self) -> Dict[str, Any]:
         """Returns the cursed mansion map view without revealing real/decoy answers."""
