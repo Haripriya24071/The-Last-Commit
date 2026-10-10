@@ -78,9 +78,39 @@ def should_ignore_path(path: Path, repo_root: Path) -> bool:
 
 
 PRIORITY_EXTENSIONS = {
-    ".py", ".ts", ".tsx", ".js", ".jsx", ".json", ".env", ".yaml", ".yml",
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".env", ".yaml", ".yml",
     ".toml", ".ini", ".cfg", ".sql", ".sh", ".md", ".html", ".css"
 }
+
+def detect_language_by_extension(path: Path) -> str:
+    """Identifies programming language or file format from file suffix."""
+    ext = path.suffix.lower()
+    if ext == ".py":
+        return "python"
+    elif ext in {".ts", ".mts", ".cts"}:
+        return "typescript"
+    elif ext == ".tsx":
+        return "typescriptreact"
+    elif ext in {".js", ".mjs", ".cjs"}:
+        return "javascript"
+    elif ext == ".jsx":
+        return "javascriptreact"
+    elif ext in {".json", ".jsonc"}:
+        return "json"
+    elif ext in {".yaml", ".yml"}:
+        return "yaml"
+    elif ext in {".toml", ".ini", ".cfg"}:
+        return "config"
+    elif ext == ".sql":
+        return "sql"
+    elif ext in {".sh", ".bash", ".zsh"}:
+        return "shell"
+    elif ext == ".md":
+        return "markdown"
+    elif path.name.startswith(".env"):
+        return "env"
+    return "generic"
+
 
 def get_scan_files(repo_path: Path, extensions: Optional[set] = None, max_files: int = 400) -> List[Path]:
     """Recursively collects up to max_files prioritized candidate source files in repo_path."""
