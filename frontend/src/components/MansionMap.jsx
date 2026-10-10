@@ -18,7 +18,10 @@ export default function MansionMap() {
     fetchMansionMap,
     fetchReport,
     toggleQuality,
-    resetGame
+    resetGame,
+    setScreen,
+    repoUrl,
+    playerName
   } = useGameStore()
 
   const rooms = mansionMap || {
@@ -178,7 +181,7 @@ export default function MansionMap() {
                 key={r}
                 onClick={() => {
                   setRole(r)
-                  fetchMansionMap('sample')
+                  fetchMansionMap(repoUrl || 'sample')
                 }}
                 style={{
                   background: isSelected ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
@@ -210,21 +213,38 @@ export default function MansionMap() {
           })}
         </div>
 
-        <button
-          onClick={toggleQuality}
-          style={{
-            background: lowQuality ? '#78350f' : '#1e293b',
-            color: '#fff',
-            border: 'none',
-            padding: '5px 12px',
-            borderRadius: '6px',
-            fontSize: '11px',
-            cursor: 'pointer',
-            fontFamily: 'JetBrains Mono, monospace'
-          }}
-        >
-          {lowQuality ? '⚡ FAST 60FPS' : '✨ HIGH QUALITY'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setScreen('role_select')}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: '#9ca3af',
+              padding: '5px 12px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            ← ROLES
+          </button>
+          <button
+            onClick={toggleQuality}
+            style={{
+              background: lowQuality ? '#78350f' : '#1e293b',
+              color: '#fff',
+              border: 'none',
+              padding: '5px 12px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            {lowQuality ? '⚡ FAST 60FPS' : '✨ HIGH QUALITY'}
+          </button>
+        </div>
       </section>
 
       {/* 3. 2D Blueprint Mansion Rooms Grid */}

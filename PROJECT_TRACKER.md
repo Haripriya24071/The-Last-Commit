@@ -161,25 +161,26 @@
 - [x] Built Comprehensive Haunting Report payoff screen with rank calculation (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*).
 - [x] **CHECKPOINT LAYER 1**: Complete standalone playable single-room hunt verified.
 
-### 🔲 Phase 5: Cursed Map Layer (Est: 3h)
-- [ ] Design 2D interactive blueprint map UI overlay.
-- [ ] Display 5 mansion rooms with dynamic whisper hints (Cold spot, Scratching, etc.).
-- [ ] Implement lantern visit counter (4 visits maximum).
-- [ ] Seamless transitions: Map ➡️ 3D Room ➡️ Map ➡️ Report.
+### ✅ Phase 5: Cursed Map Layer (Completed)
+- [x] Design 2D interactive blueprint map UI overlay (`MansionMap.jsx`).
+- [x] Display 5 mansion rooms with dynamic whisper hints (`cold_spot`, `scratching`, `flickering_lights`, `silence`).
+- [x] Implement lantern visit counter (4 visits maximum) tracked via `POST /api/enter-room`.
+- [x] Seamless transitions: Map ➡️ 3D Room ➡️ Map ➡️ Report with persistent relic badges.
 
-### 🔲 Phase 6: Frame & UI Polish (Est: 3h)
-- [ ] Build landing screen & dark candle intro.
-- [ ] Name input and audio unlock ritual.
-- [ ] Repo input bar with quick button *"Take the Cursed House"*.
-- [ ] Interactive 3-card Role Selection screen.
-- [ ] Haunting Report view with code snippets, fix suggestions, and rank calculation (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*).
+### ✅ Phase 6: Frame & UI Polish (Completed)
+- [x] Build landing screen & dark candle intro (`LandingScreen.jsx`).
+- [x] Name input and Web Audio unlock ritual.
+- [x] Lore briefing & game rules screen (`WelcomeScreen.jsx`).
+- [x] Repo input bar with quick button *"Take the Cursed House"* and animated scanning ritual overlay (`RepoInputScreen.jsx`).
+- [x] Interactive 3-card Role Selection screen with dynamic presence indicators (`RoleSelectScreen.jsx`).
+- [x] Comprehensive Haunting Report modal with code snippets, fix suggestions, and rank calculation (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*) (`HauntingReportModal.jsx`).
 
 ### 🔲 Phase 7: Audio, Atmosphere & Accessibility (Est: 2h)
-- [ ] Integrate Howler.js for ambient horror soundscapes and jump scare audio.
+- [ ] Integrate Web Audio synthesizers & audio buffers for room drone ambiance.
 - [ ] Implement dynamic heartbeat audio proximity cue (speeds up near bugged objects).
-- [ ] Add browser Text-to-Speech for Skeleton sarcastic commentary.
-- [ ] Add post-processing effects (vignette, film grain, bloom).
-- [ ] Add *"Reduce Scares"* accessibility toggle in UI.
+- [ ] Add browser Text-to-Speech (TTS) for Skeleton sarcastic commentary on decoy triggers.
+- [ ] Add horror visual post-processing effects (vignette, film grain, bloom).
+- [ ] Verify *"Reduce Scares"* accessibility toggle across all UI screens.
 
 ### 🔲 Phase 8: Audition Rehearsal & Documentation (Est: 2h)
 - [ ] Rehearse 5-minute audition presentation flow.
@@ -200,11 +201,13 @@
 - [x] Verified live scan on public Python (`pallets/click`) and JavaScript (`expressjs/express`) repos.
 - [x] **Phase 3**: 3D First-Person Room (`ProceduralRoom.jsx`, `Props3D.jsx`, `FirstPersonController.jsx`, `RoomHUD.jsx`, `AudioEngine.js`), WASD navigation, pointer lock with audio context unlock, low-quality toggle, and dev mode room switcher.
 - [x] **Phase 4**: Complete standalone playable Layer 1 single-room loop (real/decoy checks, 6 jump scares, throttled `/api/warmth` heartbeat, soft ending, found relics drawer, haunting report modal, 18/18 pytest passing).
+- [x] **Phase 5**: Cursed Map Layer (Layer 2) — 2D blueprint map with 5 rooms, whisper hints, 4 lantern visit counters, and `Escape` map return.
+- [x] **Phase 6**: Frame & Full UI Flow — Landing intro, investigator name input, lore briefing, repo input bar with instant sample button, animated scanning ritual, and 3-card role selection with dynamic presence levels.
 
 ### ⏳ In Progress
-- [ ] **Phase 5**: Cursed Map Layer (Layer 2) — 2D blueprint map with 5 rooms, whisper hints, and 4 lantern visit counters.
+- [ ] **Phase 7**: Audio, Atmosphere & Skeleton TTS Commentary.
 
 ### 🔜 What's Next
-- Build 2D mansion blueprint map UI with room select buttons and dynamic atmospheric whisper hints.
-- Wire transitions: Map ➡️ Room ➡️ Check Relics ➡️ Consume Lantern Visit ➡️ Return to Map ➡️ Haunting Report.
+- Integrate ambient room drones, browser TTS for Skeleton roasts on decoy clicks, and post-processing film grain / vignette.
+
 

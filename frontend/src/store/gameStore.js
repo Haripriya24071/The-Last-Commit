@@ -10,6 +10,12 @@ const SCARE_TYPES = [
 ]
 
 export const useGameStore = create((set, get) => ({
+  // Screen Flow: 'landing' | 'welcome' | 'repo_input' | 'role_select' | 'map' | 'room'
+  currentScreen: 'landing',
+  playerName: 'Investigator',
+  repoUrl: 'sample',
+  scanProgressMessage: 'Awakening ancient detectors...',
+
   // Game navigation state
   currentView: 'map', // 'map' | 'room'
   scanId: null,
@@ -46,7 +52,10 @@ export const useGameStore = create((set, get) => ({
   audioUnlocked: false,
   isPointerLocked: false,
 
-  // Actions
+  // Screen Actions
+  setScreen: (screen) => set({ currentScreen: screen }),
+  setPlayerName: (name) => set({ playerName: name || 'Investigator' }),
+  setRepoUrl: (url) => set({ repoUrl: url }),
   setRole: (role) => set({ role }),
   setView: (view) => set({ currentView: view }),
   toggleQuality: () => set((state) => ({ lowQuality: !state.lowQuality })),
@@ -66,7 +75,57 @@ export const useGameStore = create((set, get) => ({
     showReport: false
   }),
 
-  // Fetch Mansion Map via /api/map/{scanId} or initiate scan
+  // Execute scan with animated spooky ritual messages
+  runScanRitual: async (repoInput) => {
+    const targetUrl = repoInput || get().repoUrl || 'sample'
+    set({ isScanning: true, scanProgressMessage: 'Summoning git shallow clone...' })
+
+    // Progressive spooky status updates
+    const timer1 = setTimeout(() => {
+      set({ scanProgressMessage: 'Consulting the dark AST syntax trees...' })
+    }, 1200)
+
+    const timer2 = setTimeout(() => {
+      set({ scanProgressMessage: 'Detecting buried security flaws & code rot...' })
+    }, 2400)
+
+    const timer3 = setTimeout(() => {
+      set({ scanProgressMessage: 'Binding corrupted lines to mansion rooms...' })
+    }, 3600)
+
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo_url: targetUrl, role: get().role })
+      })
+      const data = await res.json()
+
+      clearTimeout(timer1)
+      clearTimeout(timer2)
+      clearTimeout(timer3)
+
+      set({
+        scanId: data.scan_id,
+        role: data.role,
+        mansionMap: data.rooms,
+        rolePresence: data.role_presence || { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
+        lifelines: data.lifelines_left ?? 4,
+        lanternVisitsLeft: data.lantern_visits_left ?? 4,
+        isScanning: false,
+        currentScreen: 'role_select'
+      })
+      return data
+    } catch (err) {
+      console.error('Error scanning repo:', err)
+      clearTimeout(timer1)
+      clearTimeout(timer2)
+      clearTimeout(timer3)
+      set({ isScanning: false })
+    }
+  },
+
+  // Fetch Mansion Map via /api/map/{scanId}
   fetchMansionMap: async (repoUrl = 'sample') => {
     set({ isScanning: true })
     try {
@@ -83,8 +142,7 @@ export const useGameStore = create((set, get) => ({
         rolePresence: data.role_presence || { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
         lifelines: data.lifelines_left ?? 4,
         lanternVisitsLeft: data.lantern_visits_left ?? 4,
-        isScanning: false,
-        currentView: 'map'
+        isScanning: false
       })
       return data
     } catch (err) {
@@ -100,7 +158,6 @@ export const useGameStore = create((set, get) => ({
 
     try {
       if (!scanId) {
-        // Init scan first if not existing
         const mapData = await get().fetchMansionMap('sample')
         scanId = mapData.scan_id
       }
@@ -125,6 +182,7 @@ export const useGameStore = create((set, get) => ({
         lanternVisitsLeft: data.lantern_visits_left,
         lifelines: data.lifelines_left,
         isGameOver: data.game_over || false,
+        currentScreen: 'room',
         currentView: 'room',
         isLoadingRoom: false
       })
@@ -136,7 +194,7 @@ export const useGameStore = create((set, get) => ({
 
   // Return to Map (Esc / door click) without spending a lantern visit
   returnToMap: () => {
-    set({ currentView: 'map', isPointerLocked: false })
+    set({ currentScreen: 'map', currentView: 'map', isPointerLocked: false })
   },
 
   // Update player position warmth via POST /api/warmth
