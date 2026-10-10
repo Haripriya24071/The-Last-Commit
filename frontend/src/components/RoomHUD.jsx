@@ -387,27 +387,82 @@ export default function RoomHUD() {
         }} />
       )}
 
-      {/* 5. Click to Enter / Lock Pointer Overlay */}
+      {/* 5. Pause Menu Overlay (Shown whenever Pointer Lock is released via Esc or click outside) */}
       {!isPointerLocked && !isGameOver && !activeRelicModal && !activeScare && !showReport && (
         <div style={{
           position: 'absolute',
-          bottom: '80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(18, 16, 26, 0.92)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '12px',
-          padding: '14px 28px',
-          textAlign: 'center',
-          backdropFilter: 'blur(16px)',
-          boxShadow: '0 0 30px rgba(0,0,0,0.9)'
+          inset: 0,
+          background: 'rgba(5, 5, 8, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 30,
+          pointerEvents: 'auto'
         }}>
-          <p style={{ margin: 0, fontSize: '14px', color: '#fff', fontWeight: 600 }}>
-            🖱️ CLICK SCREEN TO ENTER FIRST-PERSON VIEW
-          </p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
-            WASD to Walk • Mouse to Look • Click floating files to test for bugs • Press Esc to return to map
-          </p>
+          <div style={{
+            background: 'rgba(18, 14, 28, 0.95)',
+            border: '2px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '16px',
+            padding: '32px 40px',
+            textAlign: 'center',
+            maxWidth: '460px',
+            width: '90%',
+            boxShadow: '0 0 40px rgba(0,0,0,0.9)'
+          }}>
+            <div style={{ fontSize: '36px', marginBottom: '8px' }}>⏸️🕯️</div>
+            <h3 style={{
+              fontFamily: 'Cinzel Decorative, serif',
+              fontSize: '22px',
+              color: '#ef4444',
+              margin: '0 0 6px 0',
+              letterSpacing: '1px'
+            }}>
+              PAUSED: MANSION ROOM
+            </h3>
+            <p style={{ color: '#9ca3af', fontSize: '12px', margin: '0 0 24px 0' }}>
+              Pointer released. Resume first-person code investigation or return to the blueprint.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  const canvas = document.querySelector('canvas')
+                  if (canvas) canvas.requestPointerLock?.()
+                }}
+                style={{
+                  padding: '12px',
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+              >
+                ▶️ RESUME INVESTIGATION
+              </button>
+
+              <button
+                onClick={returnToMap}
+                style={{
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+              >
+                🗺️ RETURN TO MAP (No Visit Consumed)
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
