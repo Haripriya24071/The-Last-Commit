@@ -77,16 +77,28 @@ def should_ignore_path(path: Path, repo_root: Path) -> bool:
     return False
 
 
-def get_scan_files(repo_path: Path, extensions: Optional[set] = None) -> List[Path]:
-    """Recursively collects all candidate source files in repo_path."""
+PRIORITY_EXTENSIONS = {
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".json", ".env", ".yaml", ".yml",
+    ".toml", ".ini", ".cfg", ".sql", ".sh", ".md", ".html", ".css"
+}
+
+def get_scan_files(repo_path: Path, extensions: Optional[set] = None, max_files: int = 400) -> List[Path]:
+    """Recursively collects up to max_files prioritized candidate source files in repo_path."""
     valid_files: List[Path] = []
     if not repo_path.exists():
         return valid_files
 
     for path in repo_path.rglob("*"):
         if path.is_file() and not should_ignore_path(path, repo_path):
-            if extensions is None or path.suffix.lower() in extensions:
+            ext = path.suffix.lower()
+            if extensions is not None:
+                if ext in extensions:
+                    valid_files.append(path)
+            elif ext in PRIORITY_EXTENSIONS or path.name.startswith(".env"):
                 valid_files.append(path)
+
+            if len(valid_files) >= max_files:
+                break
 
     return sorted(valid_files)
 
