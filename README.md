@@ -196,10 +196,13 @@ Screenshots of every stage (Landing Screen, Ritual Loading, Cursed Mansion Map, 
 
 ---
 
-## 🔒 Safety, Security & Integrity Guarantees
-- **Zero Code Execution:** Repositories are cloned shallowly with strict resource limits, analyzed entirely via static AST/pattern extraction, and permanently deleted.
-- **Server-Side Authority:** Real objects versus decoy files are strictly managed on the backend and only evaluated upon interaction, making client-side tampering impossible.
-- **Masked Credentials:** Discovered API keys or secrets are verified via format and entropy checks only, masked securely on screen, and never transmitted externally.
+## ⚠️ 08. Honest Limitations & Design Trade-offs
+
+1. **Static-Only Scope (Zero Execution):** The analysis engine runs purely static heuristics (ASTs, regex patterns, entropy, and git history). It does not execute untrusted code or run test suites, which means dynamic runtime-only exceptions or database-state race conditions are outside its scope.
+2. **File Capping for Real-Time Latency:** To guarantee responsive scan times (< 5–10s), analysis is capped at 400 prioritized source files per repository, prioritizing core logic files (`src/`, `lib/`, `app/`) over static assets, build outputs (`dist/`, `build/`), and vendor dependencies.
+3. **Browser Audio Autoplay Policies:** Modern browsers block Web Audio and Speech Synthesis until the user performs an explicit interaction gesture. The landing page "Unlock Mansion" ritual satisfies this requirement.
+4. **Headless GPU Limitations:** The Three.js 3D viewport utilizes WebGL 2.0. In headless test runners or virtualized environments without GPU acceleration, 3D rendering gracefully falls back to FAST mode or can be bypassed via direct API tests.
+5. **Rate Limiting on Public GitHub API:** Repositories are fetched via anonymous git shallow clone. If `GITHUB_TOKEN` is not configured, the GitHub API size check gracefully skips size pre-validation and proceeds to safe shallow cloning.
 
 ---
 
