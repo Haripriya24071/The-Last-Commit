@@ -51,6 +51,14 @@ class CheckRequest(BaseModel):
     object_id: str = Field(description="ID of the clicked 3D object")
 
 
+class WarmthRequest(BaseModel):
+    scan_id: str = Field(description="Active scan session identifier")
+    room_name: str = Field(description="Current mansion room name")
+    x: float = Field(description="Player X coordinate")
+    y: float = Field(default=1.6, description="Player Y coordinate (eye level)")
+    z: float = Field(description="Player Z coordinate")
+
+
 @app.get("/")
 def read_root():
     return {
@@ -73,15 +81,17 @@ def health_check():
 def scan_repository_endpoint(payload: ScanRequest):
     """
     Ingests repository, executes detectors, and builds the 5-room haunted mansion.
+    Logs time spent in cloning vs detectors.
     """
-    repo_path, is_temp, fallback_reason = ingest_repository(payload.repo_url or "sample")
+    repo_path, is_temp, fallback_reason, timing = ingest_repository(payload.repo_url or "sample")
     
     try:
         session = game_sessions.create_session(
             repo_path=repo_path,
             repo_target=payload.repo_url or "sample",
             role=payload.role,
-            fallback_reason=fallback_reason
+            fallback_reason=fallback_reason,
+            timing_metrics=timing
         )
         return session.to_map_view()
     finally:
@@ -120,6 +130,26 @@ def get_room_endpoint(scan_id: str, room_name: str):
     }
 
 
+@app.post("/api/warmth")
+def get_warmth_endpoint(payload: WarmthRequest):
+    """
+    Throttled warmth calculation endpoint.
+    Takes player (x, y, z) position and returns proximity warmth (0.0 to 1.0)
+    to drive the dynamic heartbeat pulse without leaking object identity or location.
+    """
+    session = game_sessions.get_session(payload.scan_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Scan session not found")
+
+    room_name_clean = payload.room_name.lower().strip()
+    return session.calculate_warmth(
+        room_name=room_name_clean,
+        x=payload.x,
+        y=payload.y,
+        z=payload.z
+    )
+
+
 @app.post("/api/check")
 def check_object_endpoint(payload: CheckRequest):
     """
@@ -136,6 +166,7 @@ def check_object_endpoint(payload: CheckRequest):
         raise HTTPException(status_code=400, detail=result["error"])
 
     return result
+
 
 
 @app.get("/api/report/{scan_id}")
