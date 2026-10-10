@@ -8,10 +8,11 @@ from typing import Optional, Literal
 from detectors.base import RoleType
 from engine import (
     ingest_repository, cleanup_temp_repo, game_sessions,
-    generate_and_save_sample_cache, load_sample_cache
+    generate_and_save_sample_cache, load_sample_cache, log_event
 )
 
 from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -206,6 +207,7 @@ def scan_repository_endpoint(payload: ScanRequest):
     Ingests repository, executes detectors, and builds the 5-room haunted mansion.
     Logs time spent in cloning vs detectors.
     """
+    log_event("scan_started", repo_target=payload.repo_url or "sample", role=payload.role.value)
     repo_path, is_temp, fallback_reason, timing = ingest_repository(payload.repo_url or "sample")
     
     try:
@@ -216,9 +218,17 @@ def scan_repository_endpoint(payload: ScanRequest):
             fallback_reason=fallback_reason,
             timing_metrics=timing
         )
+        log_event(
+            "scan_completed",
+            scan_id=session.scan_id,
+            role=session.role.value,
+            fell_back=session.fell_back,
+            findings_count=len(session.findings)
+        )
         return session.to_map_view()
     finally:
         cleanup_temp_repo(repo_path, is_temp)
+
 
 
 @app.get("/api/scan/status/{scan_id}", response_model=ScanStatusResponse)
