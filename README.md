@@ -17,7 +17,13 @@
 
 > *"When a codebase is too messy, legacy-ridden, and insecure to live, it is sent here—to the estate."*
 
+[![CI - The Last Commit Test & Build](https://github.com/Haripriya24071/The-Last-Commit/actions/workflows/ci.yml/badge.svg)](https://github.com/Haripriya24071/The-Last-Commit/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://react.dev/)
+
 ---
+
 
 ## 🕯️ 01. The Idea in 30 Seconds
 
