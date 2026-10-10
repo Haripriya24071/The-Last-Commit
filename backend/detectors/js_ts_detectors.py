@@ -131,3 +131,48 @@ class JSLooseEqualityDetector(BaseDetector):
 
         return findings
 
+
+class JSConsoleLogDetector(BaseDetector):
+    """Detects leftover console.log / console.debug calls in production JS/TS files."""
+    name = "js_console_log"
+    role = RoleType.SKELETON
+
+    def scan(self, repo_path: Path) -> List[Finding]:
+        findings: List[Finding] = []
+        files = get_js_ts_files(repo_path)
+
+        for file_path in files:
+            # Skip test files
+            rel_path_str = str(file_path.relative_to(repo_path)).replace("\\", "/").lower()
+            if "test" in rel_path_str or "spec" in rel_path_str or "mock" in rel_path_str:
+                continue
+
+            try:
+                rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/")
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+
+                log_pattern = re.compile(r'\bconsole\.(?:log|debug|dir|trace)\s*\(')
+
+                for line_idx, line in enumerate(lines, start=1):
+                    code_part = re.sub(r'//.*$', '', line)
+                    if log_pattern.search(code_part):
+                        findings.append(Finding(
+                            id=f"js-console-log-{rel_path}-{line_idx}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="leftover_console_log",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation="Leftover debug console logging statement in production source code.",
+                            suggestion="Remove the console.log call or route messages through a dedicated logger.",
+                            severity=FindingSeverity.LOW,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+            except Exception as e:
+                print(f"[JSConsoleLogDetector] Error scanning {file_path}: {e}")
+
+        return findings
+
+
