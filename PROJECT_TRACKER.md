@@ -8,15 +8,15 @@
 
 | Metric / Category | Status | Details |
 | :--- | :--- | :--- |
-| **Current Active Phase** | `Phase 1: Code Scanner & Detectors` | Implementing Ghost, Reaper, and Skeleton detectors |
-| **Completed Phase** | `Phase 0: Setup & Scaffolding` | Scaffolding, Backend API proof, 3D proof cube, Cursed Sample Repo |
-| **Next Up** | `Phase 2: API Engine` | FastAPI endpoints for scan, map, room, and check |
-| **Overall Completion** | `15%` | Phase 0 verified & passing |
+| **Current Active Phase** | `Phase 2: API Engine` | Ingester, Game Builder, room endpoints, check & report APIs |
+| **Completed Phases** | `Phase 0, Phase 1` | Setup, Scaffolding, Language-Neutral Finding Schema, Tier 1 Agnostic & Python AST Detectors |
+| **Next Up** | `Phase 3: 3D Room` | Loading mansion environment, First-person controls, 3D object placement |
+| **Overall Completion** | `30%` | Phase 1 (10/10 tests) verified & passing |
 | **Architecture Mode** | `2-Layer Design` | Layer 1 (Single Room Core Loop) ➡️ Layer 2 (Full Mansion Map) |
 
 ```
 [Phase 0: Setup] ➔ [Phase 1: Scanner] ➔ [Phase 2: API] ➔ [Phase 3: 3D Room] ➔ [Phase 4: Game Logic] ➔ [Phase 5: Map] ➔ [Phase 6: Frame] ➔ [Phase 7: Polish] ➔ [Phase 8: Rehearse]
-      🟢                 🟡                  ⚪                ⚪                  ⚪                 ⚪              ⚪               ⚪                ⚪
+      🟢                 🟢                  🟡                ⚪                  ⚪                 ⚪              ⚪               ⚪                ⚪
 ```
 
 ---
@@ -125,12 +125,13 @@
 - [x] Verify backend environment (`fastapi`, `pytest`, `radon`, `vulture`, `ruff`) with passing test.
 - [x] Verify frontend environment (`React 18`, `Three.js`, `@react-three/fiber`, `@react-three/drei`, `Zustand`) with spinning 3D proof cube.
 
-### 🔲 Phase 1: Code Scanner & Detectors (Est: 5h)
-- [ ] Define standardized `Finding` schema (JSON structure for all roles).
-- [ ] Implement **Ghost Detector** (`ast` + regex for logic/runtime errors).
-- [ ] Implement **Reaper Detector** (entropy, secret patterns, dangerous calls).
-- [ ] Implement **Skeleton Detector** (complexity, dead code, commit log analysis).
-- [ ] Write unit tests verifying that scanner accurately identifies 100% of sample repo bugs.
+### ✅ Phase 1: Code Scanner & Detectors (Completed)
+- [x] Defined standardized, language-neutral `Finding` schema (`id`, `role`, `language`, `type`, `file`, `line`, `snippet`, `explanation`, `suggestion`, `severity`, `confidence`, `room`).
+- [x] Created `BaseDetector` plugin interface with `scan(repo_path) -> list[Finding]` contract.
+- [x] Implemented **Tier 1 Language-Agnostic Detectors** (`AgnosticReaperDetector` for committed `.env` files/keys & `AgnosticSkeletonDetector` for `TODO`/`FIXME` comments, missing README/tests, weak commits).
+- [x] Implemented **Python AST & Complexity Plugins** (`PythonGhostDetector`, `PythonReaperDetector`, `PythonSkeletonDetector`).
+- [x] Implemented automatic folder-to-room mapper (5 Mansion Rooms: `library`, `chapel`, `cellar`, `study`, `attic`).
+- [x] Automated unit test suite (`backend/test_scanner.py`) verified against `sample_repo/` (10/10 passing tests).
 
 ### 🔲 Phase 2: FastAPI Backend Engine (Est: 3h)
 - [ ] Implement `POST /api/scan`: Ingester with size/file-count/timeout safeguards + shallow clone.

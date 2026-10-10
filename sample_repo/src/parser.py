@@ -11,6 +11,7 @@ def sanitize_string(text: str) -> str:
 
 def parse_integer(value, default: int = 0) -> int:
     """Parses integer safely with fallback."""
+    # TODO: Implement strict hexadecimal and binary string parsing support
     try:
         return int(value)
     except (ValueError, TypeError):
