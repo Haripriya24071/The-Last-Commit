@@ -22,11 +22,15 @@ JUMP_SCARE_TYPES = [
 ]
 
 
+SESSION_EXPIRY_SECONDS = 7200  # 2 hours
+
+
 class GameSession:
-    def __init__(self, scan_id: str, repo_target: str, role: RoleType):
+    def __init__(self, scan_id: str, repo_target: str, role: RoleType, fallback_reason: Optional[str] = None):
         self.scan_id = scan_id
         self.repo_target = repo_target
         self.role = role
+        self.fallback_reason = fallback_reason
         self.created_at = time.time()
         
         self.findings: List[Finding] = []
@@ -40,6 +44,7 @@ class GameSession:
         self.lifelines_remaining: int = 4
         self.lantern_visits_remaining: int = 4
         self.score: int = 0
+        self.is_game_over: bool = False
 
     def to_map_view(self) -> Dict[str, Any]:
         """Returns the cursed mansion map view without revealing real/decoy answers."""
@@ -47,8 +52,10 @@ class GameSession:
             "scan_id": self.scan_id,
             "role": self.role.value,
             "is_suspiciously_clean": self.is_suspiciously_clean,
+            "fallback_reason": self.fallback_reason,
             "lantern_visits_left": self.lantern_visits_remaining,
             "lifelines_left": self.lifelines_remaining,
+            "is_game_over": self.is_game_over,
             "rooms": self.rooms_public
         }
 
@@ -58,9 +65,28 @@ class SessionStore:
     def __init__(self):
         self._sessions: Dict[str, GameSession] = {}
 
-    def create_session(self, repo_path: Path, repo_target: str, role: RoleType) -> GameSession:
+    def _prune_expired_sessions(self):
+        """Removes sessions older than SESSION_EXPIRY_SECONDS."""
+        now = time.time()
+        expired = [sid for sid, s in self._sessions.items() if (now - s.created_at) > SESSION_EXPIRY_SECONDS]
+        for sid in expired:
+            del self._sessions[sid]
+
+    def create_session(
+        self,
+        repo_path: Path,
+        repo_target: str,
+        role: RoleType,
+        fallback_reason: Optional[str] = None
+    ) -> GameSession:
+        self._prune_expired_sessions()
         scan_id = f"mansion_{uuid.uuid4().hex[:8]}"
-        session = GameSession(scan_id=scan_id, repo_target=repo_target, role=role)
+        session = GameSession(
+            scan_id=scan_id,
+            repo_target=repo_target,
+            role=role,
+            fallback_reason=fallback_reason
+        )
 
         # 1. Execute Scanner Detectors for Chosen Role
         findings = default_scanner.scan_repository(repo_path, role=role)
@@ -113,12 +139,22 @@ class SessionStore:
         return session
 
     def get_session(self, scan_id: str) -> Optional[GameSession]:
+        self._prune_expired_sessions()
         return self._sessions.get(scan_id)
 
     def evaluate_object_click(self, scan_id: str, room_name: str, object_id: str) -> Dict[str, Any]:
         session = self.get_session(scan_id)
         if not session:
             return {"error": "Session not found", "is_valid": False}
+
+        if session.is_game_over:
+            return {
+                "error": "Game over. All candles have been extinguished.",
+                "game_over": True,
+                "is_valid": False,
+                "lifelines_left": 0,
+                "current_score": session.score
+            }
 
         if room_name not in session.rooms_server_truth:
             return {"error": "Invalid room name", "is_valid": False}
@@ -127,7 +163,7 @@ class SessionStore:
         if object_id not in room_truth:
             return {"error": "Object not found in room", "is_valid": False}
 
-        # Check if already clicked
+        # Idempotency: return existing result if already clicked
         click_key = f"{room_name}:{object_id}"
         if click_key in session.clicked_objects:
             return session.clicked_objects[click_key]
@@ -145,11 +181,15 @@ class SessionStore:
                 "points_earned": 100,
                 "current_score": session.score,
                 "lifelines_left": session.lifelines_remaining,
+                "game_over": False,
                 "message": f"Relic Uncovered: {finding['type']} in {finding['file']}!"
             }
         else:
             # Trigger jump scare and decrease lifeline
             session.lifelines_remaining = max(0, session.lifelines_remaining - 1)
+            if session.lifelines_remaining == 0:
+                session.is_game_over = True
+
             scare_index = len(session.clicked_objects) % len(JUMP_SCARE_TYPES)
             scare_type = JUMP_SCARE_TYPES[scare_index]
 
@@ -160,8 +200,8 @@ class SessionStore:
                 "current_score": session.score,
                 "lifelines_left": session.lifelines_remaining,
                 "jump_scare_type": scare_type,
-                "game_over": session.lifelines_remaining <= 0,
-                "message": f"Decoy! The house screeches at you. 1 candle extinguished."
+                "game_over": session.is_game_over,
+                "message": "Decoy! The house screeches at you. 1 candle extinguished."
             }
 
         session.clicked_objects[click_key] = result
