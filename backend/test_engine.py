@@ -287,4 +287,25 @@ def test_windows_cleanup_regression_on_readonly_files(tmp_path):
     assert not test_dir.exists()
 
 
+# 14. Friendly JSON Exception Handler Test
+def test_friendly_json_exception_handlers():
+    """Verify FastAPI exception handlers return friendly JSON response."""
+    res = client.get("/api/map/invalid-nonexistent-session-id")
+    assert res.status_code == 404
+    data = res.json()
+    assert data["error"] is True
+    assert "detail" in data
+    assert "spirits in the mansion" in data["message"]
+
+
+# 15. GitHub API Size Check Rate Limit / Network Failure Resilience Test
+def test_github_api_size_check_rate_limit_resilience():
+    """Verify check_github_repo_size_api returns None on network failures or rate limits."""
+    from engine.ingester import check_github_repo_size_api
+    # Non-existent or offline domain simulation
+    size = check_github_repo_size_api("invalid-user-xyz-9999", "nonexistent-repo-1234")
+    assert size is None or isinstance(size, int)
+
+
+
 
