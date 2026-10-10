@@ -60,7 +60,13 @@ class PythonSkeletonDetector(BaseDetector):
             for node in ast.walk(tree):
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     # Collect defined function for dead code analysis
-                    if not node.name.startswith("test_") and not node.name.startswith("__"):
+                    # Exclude: decorated functions (e.g. routes, fixtures, properties), test functions, dunders, entrypoints
+                    is_decorated = len(node.decorator_list) > 0
+                    is_test = node.name.startswith("test_")
+                    is_dunder = node.name.startswith("__") and node.name.endswith("__")
+                    is_entry = py_file.name in {"main.py", "app.py", "wsgi.py", "asgi.py"} or node.name in {"main", "run", "handler"}
+
+                    if not is_decorated and not is_test and not is_dunder and not is_entry:
                         snippet = lines[node.lineno - 1].strip() if 1 <= node.lineno <= len(lines) else f"def {node.name}()"
                         defined_functions[node.name] = (rel_file, node.lineno, snippet)
 
@@ -83,9 +89,10 @@ class PythonSkeletonDetector(BaseDetector):
                             confidence=FindingConfidence.CERTAIN
                         ))
 
-                    # Vague variable names within function
+                    # Vague variable names within function: only check explicit simple assignments (ast.Assign)
+                    # Ignore loop iterators (ast.For), comprehensions (ast.ListComp), and parameters
                     for stmt in node.body:
-                        if isinstance(stmt, ast.Assign):
+                        if isinstance(stmt, ast.Assign) and not isinstance(stmt, (ast.For, ast.AsyncFor)):
                             for target in stmt.targets:
                                 if isinstance(target, ast.Name) and target.id.lower() in self.VAGUE_NAMES:
                                     snippet = lines[stmt.lineno - 1].strip() if 1 <= stmt.lineno <= len(lines) else target.id
@@ -100,7 +107,7 @@ class PythonSkeletonDetector(BaseDetector):
                                         explanation=f"Variable '{target.id}' uses vague, uncommunicative naming.",
                                         suggestion="Use descriptive identifiers reflecting the domain concept.",
                                         severity=FindingSeverity.LOW,
-                                        confidence=FindingConfidence.CERTAIN
+                                        confidence=FindingConfidence.POSSIBLE
                                     ))
 
                 # Collect all name references across the file
@@ -111,7 +118,7 @@ class PythonSkeletonDetector(BaseDetector):
 
         # 2. Dead code check (functions never referenced)
         for func_name, (rel_file, lineno, snippet) in defined_functions.items():
-            # If function name is never loaded/called anywhere
+            # If function name is never loaded/called anywhere across scanned files
             if func_name not in called_names:
                 findings.append(Finding(
                     id=f"skeleton_dead_code_{rel_file}_{lineno}_{func_name}",
