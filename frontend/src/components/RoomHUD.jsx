@@ -7,13 +7,13 @@ export default function RoomHUD() {
     currentRoom,
     roomData,
     lifelines,
+    lanternVisitsLeft,
     score,
     isPointerLocked,
     isGameOver,
     activeScare,
     activeRelicModal,
     lowQuality,
-    isDevMode,
     reduceScares,
     warmth,
     hasRelicsRemaining,
@@ -24,18 +24,25 @@ export default function RoomHUD() {
     clearRelicModal,
     closeReport,
     toggleQuality,
-    toggleDevMode,
     toggleReduceScares,
-    fetchRoom,
     fetchReport,
+    returnToMap,
     resetGame,
-    scanId,
-    role,
-    setRole
+    role
   } = useGameStore()
 
   const [showDrawer, setShowDrawer] = useState(false)
-  const roomList = ['library', 'cellar', 'chapel', 'study', 'attic']
+
+  // Listen for Escape key to return to map
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        returnToMap()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [returnToMap])
 
   // Heartbeat sound loop driven by /api/warmth
   useEffect(() => {
@@ -89,39 +96,62 @@ export default function RoomHUD() {
         alignItems: 'center',
         background: 'linear-gradient(to bottom, rgba(5,5,8,0.94), transparent)'
       }}>
-        {/* Room Title & Role Voice */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '22px' }}>🕯️</span>
-            <h2 style={{
-              fontFamily: 'Cinzel Decorative, serif',
-              fontSize: '19px',
-              color: '#f87171',
-              margin: 0,
-              textTransform: 'uppercase',
-              letterSpacing: '1px'
-            }}>
-              {roomData?.title || currentRoom}
-            </h2>
-            <span style={{
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#fca5a5',
-              fontSize: '10px',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontFamily: 'JetBrains Mono, monospace',
-              textTransform: 'uppercase'
-            }}>
-              {role}
-            </span>
+        {/* Room Title & Return to Map Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', pointerEvents: 'auto' }}>
+          <button
+            onClick={returnToMap}
+            title="Return to Cursed Blueprint (Esc)"
+            style={{
+              background: 'rgba(220, 38, 38, 0.25)',
+              border: '1px solid #ef4444',
+              color: '#fff',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>🗺️</span>
+            <span>RETURN TO MAP (Esc)</span>
+          </button>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{
+                fontFamily: 'Cinzel Decorative, serif',
+                fontSize: '18px',
+                color: '#f87171',
+                margin: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                {roomData?.title || currentRoom}
+              </h2>
+              <span style={{
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#fca5a5',
+                fontSize: '10px',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                fontFamily: 'JetBrains Mono, monospace',
+                textTransform: 'uppercase'
+              }}>
+                {role}
+              </span>
+            </div>
+            <p style={{ margin: '2px 0 0 0', color: '#9ca3af', fontSize: '11px' }}>
+              {roomData?.description || 'Search for hidden code defects.'}
+            </p>
           </div>
-          <p style={{ margin: '3px 0 0 0', color: '#9ca3af', fontSize: '11px', fontFamily: 'Inter, sans-serif' }}>
-            {roomData?.description || 'Search the room for corrupted code relics.'}
-          </p>
         </div>
 
-        {/* Lifelines (4 Candles), Score, Relics & Toggles */}
+        {/* Lifelines (4 Candles), Lantern Visits, Score, Relics & Toggles */}
         <div style={{
           pointerEvents: 'auto',
           display: 'flex',
@@ -133,14 +163,31 @@ export default function RoomHUD() {
           border: '1px solid rgba(255,255,255,0.1)',
           backdropFilter: 'blur(12px)'
         }}>
-          {/* Candles */}
+          {/* Lantern Visits Left */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: '#f59e0b', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>VISITS:</span>
+            {[0, 1, 2, 3].map((idx) => (
+              <span
+                key={idx}
+                style={{
+                  fontSize: '14px',
+                  opacity: idx < lanternVisitsLeft ? 1 : 0.2,
+                  filter: idx < lanternVisitsLeft ? 'drop-shadow(0 0 5px #f59e0b)' : 'grayscale(1)'
+                }}
+              >
+                🏮
+              </span>
+            ))}
+          </div>
+
+          {/* Candles */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
             <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>CANDLES:</span>
             {[0, 1, 2, 3].map((idx) => (
               <span
                 key={idx}
                 style={{
-                  fontSize: '17px',
+                  fontSize: '16px',
                   opacity: idx < lifelines ? 1 : 0.2,
                   filter: idx < lifelines ? 'drop-shadow(0 0 6px rgba(245,158,11,0.9))' : 'grayscale(1)',
                   transition: 'opacity 0.3s, transform 0.2s',
@@ -232,13 +279,13 @@ export default function RoomHUD() {
           <span style={{ color: '#ef4444', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, letterSpacing: '1px' }}>
             📜 RIDDLE ON THE WALL:
           </span>
-          <p style={{ margin: '2px 0 0 0', color: '#fca5a5', fontSize: '12px', fontStyle: 'italic', fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ margin: '2px 0 0 0', color: '#fca5a5', fontSize: '12px', fontStyle: 'italic' }}>
             "{roomData.riddle}"
           </p>
         </div>
       )}
 
-      {/* 3. Dynamic Heartbeat Proximity Indicator (When near real bugs) */}
+      {/* 3. Dynamic Heartbeat Proximity Indicator */}
       {warmth > 0.1 && hasRelicsRemaining && (
         <div style={{
           position: 'absolute',
@@ -292,11 +339,11 @@ export default function RoomHUD() {
           backdropFilter: 'blur(16px)',
           boxShadow: '0 0 30px rgba(0,0,0,0.9)'
         }}>
-          <p style={{ margin: 0, fontSize: '14px', color: '#fff', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#fff', fontWeight: 600 }}>
             🖱️ CLICK SCREEN TO ENTER FIRST-PERSON VIEW
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
-            WASD to Walk • Mouse to Look • Click floating files to test for bugs
+            WASD to Walk • Mouse to Look • Click floating files to test for bugs • Press Esc to return to map
           </p>
         </div>
       )}
@@ -361,7 +408,7 @@ export default function RoomHUD() {
             {activeScare === 'mirror_shatter' && 'THE MIRROR SHATTERS!'}
             {activeScare === 'eerie_laughter' && 'DEMONIC LAUGHTER!'}
           </h1>
-          <p style={{ color: '#fca5a5', fontSize: '16px', fontFamily: 'Inter, sans-serif', marginTop: '10px' }}>
+          <p style={{ color: '#fca5a5', fontSize: '16px', marginTop: '10px' }}>
             DECOY TRIGGERED! 1 candle was snuffed out ({lifelines} left).
           </p>
         </div>
@@ -440,8 +487,7 @@ export default function RoomHUD() {
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif'
+                cursor: 'pointer'
               }}
             >
               Continue Code Hunt
@@ -450,7 +496,7 @@ export default function RoomHUD() {
         </div>
       )}
 
-      {/* 8. Soft Ending Screen (Game Over / All Candles Extinguished) */}
+      {/* 8. Soft Ending Screen (Game Over / Candles or Visits Depleted) */}
       {isGameOver && (
         <div
           style={{
@@ -476,8 +522,10 @@ export default function RoomHUD() {
           }}>
             THE HOUSE WINS THIS TIME
           </h1>
-          <p style={{ color: '#d1d5db', fontSize: '16px', fontFamily: 'Inter, sans-serif', marginTop: '12px', maxWidth: '480px', textAlign: 'center' }}>
-            All four candles were snuffed out by decoys in the dark.
+          <p style={{ color: '#d1d5db', fontSize: '16px', marginTop: '12px', maxWidth: '480px', textAlign: 'center' }}>
+            {lifelines <= 0
+              ? 'All four candles were snuffed out by decoys in the dark.'
+              : 'Lantern oil depleted! No visits remaining to explore the rooms.'}
           </p>
 
           <div style={{
@@ -497,7 +545,7 @@ export default function RoomHUD() {
             <button
               onClick={() => {
                 resetGame()
-                fetchRoom(scanId, currentRoom)
+                returnToMap()
               }}
               style={{
                 padding: '12px 28px',
@@ -507,8 +555,7 @@ export default function RoomHUD() {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif'
+                cursor: 'pointer'
               }}
             >
               🔄 Re-light Candles & Retry
@@ -523,8 +570,7 @@ export default function RoomHUD() {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif'
+                cursor: 'pointer'
               }}
             >
               📜 View Haunting Report
@@ -662,10 +708,38 @@ export default function RoomHUD() {
               </div>
             </div>
 
+            {/* Revealed Missed Relics after game finishes */}
+            {hauntingReport.is_game_finished && hauntingReport.relics_missed && hauntingReport.relics_missed.length > 0 && (
+              <div style={{ marginTop: '20px' }}>
+                <h4 style={{ color: '#f87171', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace' }}>
+                  👻 LURKING SPIRITS MISSED ({hauntingReport.relics_missed.length}):
+                </h4>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {hauntingReport.relics_missed.map((m, idx) => (
+                    <div key={idx} style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      borderRadius: '6px',
+                      padding: '10px',
+                      marginBottom: '8px'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#fca5a5', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {m.file}:{m.line} ({m.type})
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '4px' }}>
+                        {m.explanation}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={closeReport}
               style={{
                 width: '100%',
+                marginTop: '20px',
                 padding: '12px',
                 background: '#dc2626',
                 color: '#fff',
@@ -680,91 +754,8 @@ export default function RoomHUD() {
           </div>
         </div>
       )}
-
-      {/* 11. Dev Mode Room Switcher Bar (Bottom Bar) */}
-      <footer style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '12px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: 'linear-gradient(to top, rgba(5,5,8,0.95), transparent)'
-      }}>
-        {/* Dev Mode Room Switcher */}
-        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '10px', color: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}>
-            🏰 DEV ROOMS:
-          </span>
-          {roomList.map((rm) => (
-            <button
-              key={rm}
-              onClick={() => fetchRoom(scanId, rm)}
-              style={{
-                background: currentRoom === rm ? '#dc2626' : 'rgba(39, 39, 42, 0.8)',
-                color: currentRoom === rm ? '#fff' : '#9ca3af',
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                cursor: 'pointer',
-                fontFamily: 'JetBrains Mono, monospace',
-                textTransform: 'uppercase',
-                fontWeight: currentRoom === rm ? 700 : 400
-              }}
-            >
-              {rm}
-            </button>
-          ))}
-        </div>
-
-        {/* Report Button & Role Selector */}
-        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={fetchReport}
-            style={{
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#fca5a5',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '10px',
-              cursor: 'pointer',
-              fontFamily: 'JetBrains Mono, monospace'
-            }}
-          >
-            📜 HAUNTING REPORT
-          </button>
-
-          <span style={{ fontSize: '10px', color: '#6b7280', fontFamily: 'JetBrains Mono, monospace', marginLeft: '6px' }}>ROLE:</span>
-          {['ghost', 'reaper', 'skeleton'].map((r) => (
-            <button
-              key={r}
-              onClick={() => {
-                setRole(r)
-                fetchRoom(null, currentRoom)
-              }}
-              style={{
-                background: role === r ? '#0284c7' : 'rgba(39, 39, 42, 0.8)',
-                color: role === r ? '#fff' : '#9ca3af',
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '10px',
-                cursor: 'pointer',
-                fontFamily: 'JetBrains Mono, monospace',
-                textTransform: 'uppercase',
-                fontWeight: role === r ? 700 : 400
-              }}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </footer>
     </div>
   )
 }
+
 
