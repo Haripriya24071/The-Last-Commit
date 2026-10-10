@@ -170,7 +170,10 @@ export default function App() {
         </>
       )}
 
-      {/* Shared Global Haunting Report Modal */}
+      {/* Shared Global Overlays & Post-Processing */}
+      <HorrorPostProcessing />
+      <SubtitlesOverlay />
+      <CandleLightRelicAnimation />
       <HauntingReportModal />
     </div>
   )
