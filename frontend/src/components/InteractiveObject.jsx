@@ -53,34 +53,35 @@ export default function InteractiveObject({ objData }) {
         glowColor={glowColor}
       />
 
-      {/* Floating Filename Tag */}
-      <Html position={[0, 2.1, 0]} center distanceFactor={8}>
+      {/* Floating Filename Tag with High Readability */}
+      <Html position={[0, 2.3, 0]} center distanceFactor={7}>
         <div style={{
-          padding: '4px 10px',
-          background: hovered ? 'rgba(239, 68, 68, 0.9)' : 'rgba(15, 23, 42, 0.85)',
-          border: `1px solid ${hovered ? '#f87171' : 'rgba(255, 255, 255, 0.15)'}`,
-          borderRadius: '6px',
+          padding: '6px 14px',
+          background: hovered ? 'rgba(220, 38, 38, 0.95)' : 'rgba(10, 14, 26, 0.92)',
+          border: `2px solid ${hovered ? '#ef4444' : glowColor}`,
+          borderRadius: '8px',
           color: '#fff',
           fontFamily: 'JetBrains Mono, monospace',
-          fontSize: '11px',
-          fontWeight: 600,
+          fontSize: '13px',
+          fontWeight: 700,
+          letterSpacing: '0.5px',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
-          boxShadow: hovered ? `0 0 12px ${glowColor}` : '0 2px 8px rgba(0,0,0,0.6)',
+          boxShadow: hovered ? `0 0 18px ${glowColor}` : '0 4px 14px rgba(0,0,0,0.85)',
           transition: 'all 0.15s ease-out',
-          transform: hovered ? 'scale(1.1)' : 'scale(1.0)'
+          transform: hovered ? 'scale(1.15)' : 'scale(1.0)'
         }}>
-          📄 {objData.display_name || objData.filename}
+          📜 {objData.display_name || objData.filename}
         </div>
       </Html>
 
-      {/* Subtle Ground Spotlight underneath object */}
+      {/* Ground Spotlight underneath object */}
       {hovered && (
         <pointLight
           position={[0, 0.5, 0]}
           color={glowColor}
-          intensity={1.5}
-          distance={3.5}
+          intensity={2.2}
+          distance={4.0}
         />
       )}
     </group>
