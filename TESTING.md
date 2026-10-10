@@ -29,12 +29,13 @@ npm run dev
 
 ## 🧪 2. Automated Test Suites
 
-### Backend Pytest Suite (25 tests)
+### Backend Pytest Suite (32 tests)
 ```bash
-backend\.venv\Scripts\pytest -v
+# In backend/ directory:
+.venv\Scripts\pytest -v
 ```
 
-All 25 tests verify:
+All 32 tests verify:
 - Scanner filtering (source code only for oversized files, comments-only for TODO detector)
 - Finding capping (max 3 per type/role, max 10 total)
 - Role presence calculations (`strong`, `faint`, `none`)
@@ -45,12 +46,23 @@ All 25 tests verify:
 - FastAPI custom friendly JSON exception handlers (404 and 500 error formats)
 - GitHub API size check resilience / rate-limit fallback
 - Idempotent relic scoring and session caching
+- Distinct relic sets across all 3 roles on the sample repo
+- Multi-language JS/TS detector suite (empty catch, loose equality `==`, leftover `console.log`, `eval`/`dangerouslySetInnerHTML`, `@ts-ignore`/`any` bypasses, and deep nesting)
 
-### Frontend Production Build
+### Frontend Vitest Suite (5 tests)
 ```bash
-cd frontend
+# In frontend/ directory:
+npm test
+```
+Verifies Zustand store initialization, player state transitions, reduce scares toggle, API session ingestion, and dialogue subtitle state.
+
+### Frontend Production Bundle Build
+```bash
+# In frontend/ directory:
 npm run build
 ```
+Compiles and bundles React, Three.js, and shader assets with zero build errors.
+
 
 ---
 
