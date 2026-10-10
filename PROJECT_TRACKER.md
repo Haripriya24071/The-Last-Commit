@@ -8,15 +8,15 @@
 
 | Metric / Category | Status | Details |
 | :--- | :--- | :--- |
-| **Current Active Phase** | `Phase 2: API Engine` | Ingester, Game Builder, room endpoints, check & report APIs |
-| **Completed Phases** | `Phase 0, Phase 1` | Setup, Scaffolding, Language-Neutral Finding Schema, Tier 1 Agnostic & Python AST Detectors |
-| **Next Up** | `Phase 3: 3D Room` | Loading mansion environment, First-person controls, 3D object placement |
-| **Overall Completion** | `30%` | Phase 1 (10/10 tests) verified & passing |
+| **Current Active Phase** | `Phase 3: 3D Room` | Setting up 3D first-person room, atmospheric lights, fog, and interactive objects |
+| **Completed Phases** | `Phase 0, Phase 1, Phase 2` | Scaffolding, Detectors, Ingester, Game Builder, REST APIs (`/scan`, `/map`, `/room`, `/check`, `/report`), Offline Cache |
+| **Next Up** | `Phase 4: Game Logic` | Connect object clicks to check API, lifelines, score, and jump scares |
+| **Overall Completion** | `45%` | Phase 2 (15/15 tests) verified & passing |
 | **Architecture Mode** | `2-Layer Design` | Layer 1 (Single Room Core Loop) ➡️ Layer 2 (Full Mansion Map) |
 
 ```
 [Phase 0: Setup] ➔ [Phase 1: Scanner] ➔ [Phase 2: API] ➔ [Phase 3: 3D Room] ➔ [Phase 4: Game Logic] ➔ [Phase 5: Map] ➔ [Phase 6: Frame] ➔ [Phase 7: Polish] ➔ [Phase 8: Rehearse]
-      🟢                 🟢                  🟡                ⚪                  ⚪                 ⚪              ⚪               ⚪                ⚪
+      🟢                 🟢                  🟢                🟡                  ⚪                 ⚪              ⚪               ⚪                ⚪
 ```
 
 ---
@@ -133,13 +133,14 @@
 - [x] Implemented automatic folder-to-room mapper (5 Mansion Rooms: `library`, `chapel`, `cellar`, `study`, `attic`).
 - [x] Automated unit test suite (`backend/test_scanner.py`) verified against `sample_repo/` (10/10 passing tests).
 
-### 🔲 Phase 2: FastAPI Backend Engine (Est: 3h)
-- [ ] Implement `POST /api/scan`: Ingester with size/file-count/timeout safeguards + shallow clone.
-- [ ] Implement `GET /api/map/{scan_id}`: Mansion room grouping + whisper generator.
-- [ ] Implement `GET /api/room/{scan_id}/{room_name}`: Object placement data + problem riddles.
-- [ ] Implement `POST /api/check`: Real vs Decoy evaluator (server-side validation).
-- [ ] Implement `GET /api/report/{scan_id}`: Haunting report generator.
-- [ ] Add offline local cache for the cursed sample repo.
+### ✅ Phase 2: FastAPI Backend Engine (Completed)
+- [x] Implemented `POST /api/scan`: Ingester with `--depth 50` shallow clone, repo size & timeout guards, role selection, and cleanup.
+- [x] Implemented `GET /api/map/{scan_id}`: Dynamic 5-room mansion balance with whisper signals (`cold_spot`, `scratching`, `flickering_lights`, `silence`). Real/decoy answers kept secret.
+- [x] Implemented `GET /api/room/{scan_id}/{room_name}`: 3D object positions, models, filenames, and problem riddles without answer leaks.
+- [x] Implemented `POST /api/check`: Server-side real vs decoy evaluator (awards +100 relic or triggers 1 of 6 jump scares + damage).
+- [x] Implemented `GET /api/report/{scan_id}`: Haunting Report with found/missed relics, rank calculations (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*).
+- [x] Implemented offline local cache (`backend/cache/sample_cache.json`) for zero-network live audition reliability.
+- [x] Automated test suite (`backend/test_engine.py`) verified (15/15 tests passing).
 
 ### 🔲 Phase 3: 3D First-Person Room (Est: 6h)
 - [ ] Set up Three.js / React Three Fiber / Drei canvas.
@@ -190,17 +191,15 @@
 - [x] Initialized project roadmap and master tracking ledger `PROJECT_TRACKER.md`.
 - [x] Captured all specifications from Turing Club Audition 2026 design briefing.
 - [x] **Phase 0**: Project scaffolding (`backend/`, `frontend/`, `sample_repo/`, `assets/`, `CREDITS.md`).
-- [x] Backend FastAPI environment setup, CORS middleware, and test suite passing (`backend/test_health.py`).
-- [x] Frontend React 18 + Three.js + R3F 3D environment setup and verification with spinning haunted cube.
-- [x] Planted cursed bugs across 5 mansion rooms and documented ground truth in `sample_repo/PLANTED.md`.
-- [x] Connected and synchronized all files to GitHub repository (`main`).
+- [x] **Phase 1**: Language-neutral `Finding` schema, Tier 1 Agnostic detectors, Python AST plugins, room mapper, and 10/10 passing scanner tests.
+- [x] **Phase 2**: FastAPI Backend Engine (`/scan`, `/map`, `/room`, `/check`, `/report`), shallow clone `--depth 50` ingester, dynamic room balancing, server-side real/decoy evaluator, fallback for suspiciously clean repos, and offline local cache (`backend/cache/sample_cache.json`).
+- [x] Verified zero false-positives on clean decoy files and robust error-handling on broken syntax files (15/15 passing tests).
 
 ### ⏳ In Progress
-- [ ] **Phase 1**: Code Scanner & Detectors (Ghost, Reaper, Skeleton AST and static analysis plugins).
+- [ ] **Phase 3**: 3D First-Person Room (Three.js / React Three Fiber / Drei, atmospheric lighting, fog, first-person controls, 3D room objects).
 
 ### 🔜 What's Next
-- Build the shared `Finding` schema and detector base interface.
-- Implement Ghost logic/runtime error detector (`ast`, unclosed files, bare excepts, mutable defaults).
-- Implement Reaper security detector (secrets entropy, `eval`, `shell=True`, SQL concatenation).
-- Implement Skeleton code judge detector (`radon` complexity, dead code, commit logs).
-- Write automated detector validation tests against `sample_repo/`.
+- Build the 3D room canvas and first-person navigation controls (WASD + mouse look / pointer lock).
+- Place interactive 3D models (`chest`, `portrait`, `mirror`, `clock`, `skull`, `cauldron`) dynamically using room API data.
+- Add atmospheric point lights, dark fog, flickering candles, and gothic materials.
+- Implement raycasting / pointer hover & click interaction for 3D objects.
