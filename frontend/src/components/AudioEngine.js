@@ -1,7 +1,10 @@
 /**
- * Comprehensive Web Audio Engine & Horror Soundscape Synthesizer.
+ * Comprehensive Web Audio Engine, Horror Soundscape Synthesizer & Voice Acting Subtitles.
  * Synthesizes ambient drone, door creaks, celestial chimes, heartbeat, jump scares,
- * and low-pitched sarcastic Skeleton TTS roasts.
+ * and role-specific speech synthesis with on-screen subtitle triggers for:
+ * - Ghost (whispery, ethereal)
+ * - Reaper (cold, formal, monotone)
+ * - Skeleton (raspy, sarcastic)
  */
 
 let audioCtx = null
@@ -26,6 +29,70 @@ function getAudioContext() {
     audioCtx.resume()
   }
   return audioCtx
+}
+
+export const ROLE_VOICE_LINES = {
+  ghost: {
+    name: 'THE GHOST',
+    color: '#38bdf8',
+    pitch: 1.15,
+    rate: 0.82,
+    relic: [
+      "The abandoned logic rests at last... silence returns.",
+      "A forgotten branch fades into the spectral mist.",
+      "The ghost breathes a sigh of relief. The dead function sleeps."
+    ],
+    decoy: [
+      "You disturbed empty air... The phantom slips away.",
+      "There was no sorrow in that file. Only silent dust.",
+      "The shadows mock your blind search, investigator."
+    ],
+    game_over: [
+      "The cold embraces you forever. You are one of us now.",
+      "All warmth has faded. The mansion claims another soul."
+    ]
+  },
+  reaper: {
+    name: 'THE REAPER',
+    color: '#ef4444',
+    pitch: 0.45,
+    rate: 0.95,
+    relic: [
+      "Vulnerability neutralized. The breach is sealed.",
+      "Target eliminated. Security protocols updated.",
+      "Exposed secret purged from existence. Execution confirmed."
+    ],
+    decoy: [
+      "Decoy triggered. You wasted resources on clean code.",
+      "False alarm. Your vigilance falters, investigator.",
+      "An innocent file. The executioner demands absolute accuracy."
+    ],
+    game_over: [
+      "Fatal security breach. All lifelines severed. Termination complete.",
+      "System compromised. The house execution is final."
+    ]
+  },
+  skeleton: {
+    name: 'THE SKELETON',
+    color: '#fbbf24',
+    pitch: 0.58,
+    rate: 0.82,
+    relic: [
+      "Ah! You severed the rotting tendon! Impressive... for a mortal.",
+      "Corrupted relic purged! But the mansion still holds many horrors.",
+      "One less foul defect in this tangled spaghetti architecture."
+    ],
+    decoy: [
+      "A clean file! Did you really think it would be that easy, genius?",
+      "Decoy triggered! Another candle dies in the dark.",
+      "That code was innocent! Your judgment, however, is not.",
+      "You disturbed empty dust! The bones rattle with laughter."
+    ],
+    game_over: [
+      "Your candles have burned to ash! Welcome to eternal maintenance duty.",
+      "All light has vanished! The repository remains forever cursed."
+    ]
+  }
 }
 
 export const AudioEngine = {
@@ -58,7 +125,7 @@ export const AudioEngine = {
 
     try {
       ambientGain = ctx.createGain()
-      ambientGain.gain.setValueAtTime(0.08, ctx.currentTime)
+      ambientGain.gain.setValueAtTime(0.07, ctx.currentTime)
 
       ambientOsc1 = ctx.createOscillator()
       ambientOsc1.type = 'sawtooth'
@@ -66,7 +133,7 @@ export const AudioEngine = {
 
       ambientOsc2 = ctx.createOscillator()
       ambientOsc2.type = 'sine'
-      ambientOsc2.frequency.setValueAtTime(48, ctx.currentTime) // Eerie 3Hz binaural beating
+      ambientOsc2.frequency.setValueAtTime(48, ctx.currentTime) // 3Hz binaural beating
 
       const filter = ctx.createBiquadFilter()
       filter.type = 'lowpass'
@@ -221,7 +288,7 @@ export const AudioEngine = {
     }
   },
 
-  // 6. Intro Jump Scare (Pale face flash audio)
+  // 6. Intro Jump Scare
   playIntroScare: () => {
     const ctx = getAudioContext()
     if (!ctx) return
@@ -244,46 +311,44 @@ export const AudioEngine = {
     osc.stop(ctx.currentTime + 0.9)
   },
 
-  // 7. Sarcastic Skeleton Voice via Browser Speech Synthesis
-  speakSkeletonRoast: (category = 'decoy', role = 'ghost') => {
-    if (!('speechSynthesis' in window)) return
+  // 7. Role-Specific Voice Acting with Subtitle Dispatcher
+  speakVoiceLine: (category = 'decoy', role = 'skeleton', onSubtitleCallback = null, voiceEnabled = true) => {
+    const roleKey = role.toLowerCase()
+    const config = ROLE_VOICE_LINES[roleKey] || ROLE_VOICE_LINES.skeleton
+    const linePool = config[category] || config.decoy
+    const chosenText = linePool[Math.floor(Math.random() * linePool.length)]
 
-    const lines = {
-      decoy: [
-        "A clean file! Did you really think it would be that easy?",
-        "Decoy triggered! Another candle dies in the dark.",
-        "That code was innocent. Your judgment, however, is not.",
-        "You disturbed empty dust. The phantom laughs at you."
-      ],
-      relic: [
-        "Ah, you severed the cursed line. Impressive... for a mortal.",
-        "Corrupted relic purged! But the mansion still holds many horrors.",
-        "One less foul defect in this rotten repo."
-      ],
-      game_over: [
-        "Your candles have burned to ash. The house claims your soul.",
-        "All light has vanished. Welcome to eternal maintenance.",
-        "The repository remains forever cursed."
-      ]
+    // Always dispatch on-screen subtitle regardless of audio mute
+    if (onSubtitleCallback) {
+      onSubtitleCallback({
+        speaker: config.name,
+        text: chosenText,
+        color: config.color
+      })
     }
 
-    const available = lines[category] || lines.decoy
-    const chosenText = available[Math.floor(Math.random() * available.length)]
+    // Speak via browser speech synthesis only if voice is enabled and not muted
+    if (voiceEnabled && !isMuted && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(chosenText)
+        utterance.pitch = config.pitch
+        utterance.rate = config.rate
+        utterance.volume = currentVolume
 
-    try {
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(chosenText)
-      utterance.pitch = 0.55 // Deep raspy pitch
-      utterance.rate = 0.82  // Slow sinister cadence
-      utterance.volume = isMuted ? 0 : currentVolume
+        const voices = window.speechSynthesis.getVoices()
+        const voiceCandidate = voices.find(v => v.lang.includes('en') && (
+          roleKey === 'reaper'
+            ? (v.name.includes('Male') || v.name.includes('David') || v.name.includes('Alex'))
+            : (v.name.includes('George') || v.name.includes('Natural') || v.name.includes('Google'))
+        ))
+        if (voiceCandidate) utterance.voice = voiceCandidate
 
-      const voices = window.speechSynthesis.getVoices()
-      const maleVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Male') || v.name.includes('David') || v.name.includes('George') || v.name.includes('Natural')))
-      if (maleVoice) utterance.voice = maleVoice
-
-      window.speechSynthesis.speak(utterance)
-    } catch (err) {
-      console.warn('TTS error:', err)
+        window.speechSynthesis.speak(utterance)
+      } catch (err) {
+        console.warn('TTS error:', err)
+      }
     }
+    return chosenText
   }
 }
