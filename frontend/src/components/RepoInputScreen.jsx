@@ -8,15 +8,46 @@ export default function RepoInputScreen() {
     isScanning,
     scanProgressMessage,
     runScanRitual,
-    setScreen
+    setScreen,
+    fallbackReason
   } = useGameStore()
 
   const [inputUrl, setInputUrl] = useState(repoUrl === 'sample' ? '' : repoUrl)
+  const [validationError, setValidationError] = useState(null)
+  const [scanError, setScanError] = useState(null)
 
-  const handleScan = (urlToScan) => {
+  const validateUrl = (url) => {
+    if (!url || url.toLowerCase() === 'sample' || url.toLowerCase() === 'cursed') return true
+    const regex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_\-\.]+)\/([a-zA-Z0-9_\-\.]+)(?:\.git)?(?:\/.*)?$/
+    return regex.test(url.trim())
+  }
+
+  const handleScan = async (urlToScan) => {
+    setValidationError(null)
+    setScanError(null)
+
     const target = urlToScan !== undefined ? urlToScan : inputUrl.trim()
-    setRepoUrl(target || 'sample')
-    runScanRitual(target || 'sample')
+    if (!target) {
+      // Default to sample if empty
+      setRepoUrl('sample')
+      runScanRitual('sample')
+      return
+    }
+
+    if (!validateUrl(target)) {
+      setValidationError("Invalid URL. Expected format: 'https://github.com/owner/repository'")
+      return
+    }
+
+    setRepoUrl(target)
+    try {
+      const res = await runScanRitual(target)
+      if (!res) {
+        setScanError("Scan timed out or encountered an error reaching GitHub.")
+      }
+    } catch (err) {
+      setScanError("Failed to communicate with the backend scanner.")
+    }
   }
 
   return (
@@ -47,7 +78,7 @@ export default function RepoInputScreen() {
         backdropFilter: 'blur(16px)',
         position: 'relative'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <span style={{ fontSize: '36px' }}>🕸️📜</span>
           <h2 style={{
             fontFamily: 'Cinzel Decorative, serif',
@@ -64,8 +95,75 @@ export default function RepoInputScreen() {
           </p>
         </div>
 
-        {/* Instant Sample Repo Button (Judge & Offline Safe) */}
-        <div style={{ marginBottom: '24px' }}>
+        {/* Fallback Notification Banner if prior scan fell back */}
+        {fallbackReason && (
+          <div style={{
+            background: 'rgba(120, 53, 15, 0.4)',
+            border: '1px solid #f59e0b',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <span style={{ fontSize: '18px' }}>⚠️</span>
+            <div style={{ fontSize: '12px', color: '#fde68a' }}>
+              <strong>FALLBACK TO SAMPLE:</strong> {fallbackReason}
+            </div>
+          </div>
+        )}
+
+        {/* Scan Error & Timeout Box */}
+        {scanError && (
+          <div style={{
+            background: 'rgba(127, 29, 29, 0.5)',
+            border: '1px solid #ef4444',
+            borderRadius: '8px',
+            padding: '14px',
+            marginBottom: '18px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '13px', color: '#fca5a5', marginBottom: '10px' }}>
+              ⚠️ {scanError}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <button
+                onClick={() => handleScan(inputUrl)}
+                style={{
+                  padding: '6px 14px',
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                🔄 Retry Scan
+              </button>
+              <button
+                onClick={() => handleScan('sample')}
+                style={{
+                  padding: '6px 14px',
+                  background: '#334155',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                🏚️ Use the Cursed House
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Instant Sample Repo Button */}
+        <div style={{ marginBottom: '20px' }}>
           <button
             onClick={() => handleScan('sample')}
             disabled={isScanning}
@@ -105,13 +203,13 @@ export default function RepoInputScreen() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          margin: '20px 0',
+          margin: '18px 0',
           color: '#6b7280',
           fontSize: '11px',
           fontFamily: 'JetBrains Mono, monospace'
         }}>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          <span>OR SCAN A LIVE GITHUB REPO</span>
+          <span>OR SCAN A LIVE GITHUB REPOSITORY</span>
           <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
         </div>
 
@@ -131,7 +229,10 @@ export default function RepoInputScreen() {
             <input
               type="text"
               value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
+              onChange={(e) => {
+                setInputUrl(e.target.value)
+                setValidationError(null)
+              }}
               onKeyDown={(e) => e.key === 'Enter' && handleScan()}
               placeholder="https://github.com/owner/repository"
               disabled={isScanning}
@@ -139,7 +240,7 @@ export default function RepoInputScreen() {
                 flex: 1,
                 padding: '12px 16px',
                 background: 'rgba(9, 6, 15, 0.8)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: `1px solid ${validationError ? '#ef4444' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: '8px',
                 color: '#fff',
                 fontSize: '13px',
@@ -166,9 +267,15 @@ export default function RepoInputScreen() {
               ⚡ SCAN REPO
             </button>
           </div>
+
+          {validationError && (
+            <p style={{ margin: '6px 0 0 0', color: '#f87171', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace' }}>
+              ⚠️ {validationError}
+            </p>
+          )}
         </div>
 
-        {/* Quick Demo Links */}
+        {/* Verified Quick Demo Links */}
         <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '11px', color: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}>VERIFIED DEMOS:</span>
           {[
@@ -199,7 +306,7 @@ export default function RepoInputScreen() {
         </div>
 
         {/* Back Button */}
-        <div style={{ marginTop: '28px' }}>
+        <div style={{ marginTop: '24px' }}>
           <button
             onClick={() => setScreen('welcome')}
             disabled={isScanning}
@@ -232,7 +339,6 @@ export default function RepoInputScreen() {
           alignItems: 'center',
           zIndex: 80
         }}>
-          {/* Animated Glowing Ritual Circle */}
           <div style={{
             fontSize: '68px',
             animation: 'candleFlicker 1.2s infinite',
@@ -263,7 +369,6 @@ export default function RepoInputScreen() {
             {scanProgressMessage}
           </p>
 
-          {/* Glowing Animated Progress Bar */}
           <div style={{
             width: '320px',
             height: '6px',
@@ -287,7 +392,7 @@ export default function RepoInputScreen() {
             marginTop: '16px',
             fontFamily: 'JetBrains Mono, monospace'
           }}>
-            Consulting AST parsers • Binding relics to 5 rooms • Calculating ghost presence
+            Phase: Cloning (--depth 50) ➡️ AST Parsing ➡️ 5-Room Balancing ➡️ Role Presence
           </span>
         </div>
       )}
