@@ -26,11 +26,19 @@ SESSION_EXPIRY_SECONDS = 7200  # 2 hours
 
 
 class GameSession:
-    def __init__(self, scan_id: str, repo_target: str, role: RoleType, fallback_reason: Optional[str] = None):
+    def __init__(
+        self,
+        scan_id: str,
+        repo_target: str,
+        role: RoleType,
+        fallback_reason: Optional[str] = None,
+        timing_metrics: Optional[Dict[str, float]] = None
+    ):
         self.scan_id = scan_id
         self.repo_target = repo_target
         self.role = role
         self.fallback_reason = fallback_reason
+        self.timing_metrics = timing_metrics or {}
         self.created_at = time.time()
         
         self.findings: List[Finding] = []
@@ -53,11 +61,54 @@ class GameSession:
             "role": self.role.value,
             "is_suspiciously_clean": self.is_suspiciously_clean,
             "fallback_reason": self.fallback_reason,
+            "timing_metrics": self.timing_metrics,
             "lantern_visits_left": self.lantern_visits_remaining,
             "lifelines_left": self.lifelines_remaining,
             "is_game_over": self.is_game_over,
             "rooms": self.rooms_public
         }
+
+    def calculate_warmth(self, room_name: str, x: float, y: float, z: float) -> Dict[str, Any]:
+        """
+        Calculates heat/proximity (0.0 to 1.0) to the nearest unfound real relic.
+        Never leaks object identity, position, or file name.
+        """
+        if room_name not in self.rooms_server_truth:
+            return {"warmth": 0.0, "has_relics": False}
+
+        room_truth = self.rooms_server_truth[room_name]
+        
+        # Find all un-cleansed real objects in this room
+        unfound_real_positions = []
+        for obj_id, obj_data in room_truth.items():
+            click_key = f"{room_name}:{obj_id}"
+            if obj_data.get("is_real") and click_key not in self.clicked_objects:
+                pos = obj_data.get("position", [0, 0, 0])
+                unfound_real_positions.append(pos)
+
+        if not unfound_real_positions:
+            return {"warmth": 0.0, "has_relics": False}
+
+        # Calculate minimum Euclidean distance in 3D
+        min_distance = 999.0
+        for rx, ry, rz in unfound_real_positions:
+            dist = ((x - rx) ** 2 + (y - ry) ** 2 + (z - rz) ** 2) ** 0.5
+            if dist < min_distance:
+                min_distance = dist
+
+        # Range: <= 1.5m -> 1.0 (Maximum panic heartbeat), >= 8.0m -> 0.0
+        if min_distance <= 1.5:
+            warmth_val = 1.0
+        elif min_distance >= 8.0:
+            warmth_val = 0.0
+        else:
+            warmth_val = 1.0 - ((min_distance - 1.5) / (8.0 - 1.5))
+
+        return {
+            "warmth": round(max(0.0, min(1.0, warmth_val)), 2),
+            "has_relics": True
+        }
+
 
 
 class SessionStore:
@@ -77,19 +128,25 @@ class SessionStore:
         repo_path: Path,
         repo_target: str,
         role: RoleType,
-        fallback_reason: Optional[str] = None
+        fallback_reason: Optional[str] = None,
+        timing_metrics: Optional[Dict[str, float]] = None
     ) -> GameSession:
         self._prune_expired_sessions()
         scan_id = f"mansion_{uuid.uuid4().hex[:8]}"
+        metrics = timing_metrics or {}
+
+        # 1. Execute Scanner Detectors for Chosen Role with timing
+        t_detect = time.time()
+        findings = default_scanner.scan_repository(repo_path, role=role)
+        metrics["detector_scan_sec"] = round(time.time() - t_detect, 3)
+
         session = GameSession(
             scan_id=scan_id,
             repo_target=repo_target,
             role=role,
-            fallback_reason=fallback_reason
+            fallback_reason=fallback_reason,
+            timing_metrics=metrics
         )
-
-        # 1. Execute Scanner Detectors for Chosen Role
-        findings = default_scanner.scan_repository(repo_path, role=role)
 
         # 2. Minimum-findings Fallback
         # If fewer than 3 findings, add milder Tier 1 findings (Agnostic Skeleton / Reaper)
@@ -137,6 +194,7 @@ class SessionStore:
 
         self._sessions[scan_id] = session
         return session
+
 
     def get_session(self, scan_id: str) -> Optional[GameSession]:
         self._prune_expired_sessions()
