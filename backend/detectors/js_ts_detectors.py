@@ -247,4 +247,65 @@ class JSReaperSecurityDetector(BaseDetector):
         return findings
 
 
+class TSTypeBypassDetector(BaseDetector):
+    """Detects @ts-ignore, @ts-nocheck, and explicit any bypasses that break type safety."""
+    name = "ts_type_bypass"
+    role = RoleType.GHOST
+
+    def scan(self, repo_path: Path) -> List[Finding]:
+        findings: List[Finding] = []
+        files = get_js_ts_files(repo_path)
+
+        for file_path in files:
+            # Primarily for TS/TSX files
+            if file_path.suffix.lower() not in {".ts", ".tsx"}:
+                continue
+
+            try:
+                rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/")
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+
+                for line_idx, line in enumerate(lines, start=1):
+                    # 1. @ts-ignore or @ts-nocheck
+                    if "@ts-ignore" in line or "@ts-nocheck" in line:
+                        findings.append(Finding(
+                            id=f"ts-ignore-{rel_path}-{line_idx}",
+                            role=self.role,
+                            language=detect_language_by_extension(file_path),
+                            type="typescript_ts_ignore_bypass",
+                            file=rel_path,
+                            line=line_idx,
+                            snippet=line.strip()[:80],
+                            explanation="Suppression comment (@ts-ignore / @ts-nocheck) disables compiler safety checks, hiding potential runtime crashes.",
+                            suggestion="Fix the underlying type mismatch or declare explicit interfaces instead of suppressing.",
+                            severity=FindingSeverity.MEDIUM,
+                            confidence=FindingConfidence.CERTAIN
+                        ))
+
+                    # 2. Overuse of `: any` or `as any`
+                    elif re.search(r'(?::\s*any\b|\bas\s+any\b)', line):
+                        # Skip if part of comment or string
+                        code_part = re.sub(r'//.*$', '', line)
+                        if re.search(r'(?::\s*any\b|\bas\s+any\b)', code_part):
+                            findings.append(Finding(
+                                id=f"ts-any-{rel_path}-{line_idx}",
+                                role=self.role,
+                                language=detect_language_by_extension(file_path),
+                                type="typescript_overuse_of_any",
+                                file=rel_path,
+                                line=line_idx,
+                                snippet=line.strip()[:80],
+                                explanation="Unconstrained 'any' type bypasses static type analysis and erodes TypeScript guarantees.",
+                                suggestion="Replace 'any' with a specific interface, generic parameter, or 'unknown' with type narrowing.",
+                                severity=FindingSeverity.LOW,
+                                confidence=FindingConfidence.CERTAIN
+                            ))
+            except Exception as e:
+                print(f"[TSTypeBypassDetector] Error scanning {file_path}: {e}")
+
+        return findings
+
+
+
 
