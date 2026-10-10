@@ -11,41 +11,23 @@ from engine import (
     generate_and_save_sample_cache, load_sample_cache
 )
 
-app = FastAPI(
-    title="The Last Commit — Haunted Code Hunt API",
-    description="Backend engine for The Last Commit. Scans real git codebases and builds 3D haunted mansions.",
-    version="2.0.0"
-)
+from contextlib import asynccontextmanager
 
-# Enable CORS for React frontend (Vite default is http://localhost:5173)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# Request Models
-class ScanRequest(BaseModel):
-    repo_url: Optional[str] = Field(default="sample", description="GitHub URL or 'sample' for built-in cursed repo")
-    role: RoleType = Field(default=RoleType.GHOST, description="Character role: ghost, reaper, or skeleton")
-
-
-class CheckRequest(BaseModel):
-    scan_id: str = Field(description="Active scan session identifier")
-    room_name: str = Field(description="Mansion room name: library, cellar, chapel, study, attic")
-    object_id: str = Field(description="ID of the clicked 3D object")
-
-
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Initializes local offline cache on backend startup."""
     try:
         generate_and_save_sample_cache()
     except Exception as e:
         print(f"[Cache] Startup cache warning: {e}")
+    yield
+
+app = FastAPI(
+    title="The Last Commit — Haunted Code Hunt API",
+    description="Backend engine for The Last Commit. Scans real git codebases and builds 3D haunted mansions.",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 
 @app.get("/")
