@@ -175,12 +175,15 @@
 - [x] Interactive 3-card Role Selection screen with dynamic presence indicators (`RoleSelectScreen.jsx`).
 - [x] Comprehensive Haunting Report modal with code snippets, fix suggestions, and rank calculation (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*) (`HauntingReportModal.jsx`).
 
-### 🔲 Phase 7: Audio, Atmosphere & Accessibility (Est: 2h)
-- [ ] Integrate Web Audio synthesizers & audio buffers for room drone ambiance.
-- [ ] Implement dynamic heartbeat audio proximity cue (speeds up near bugged objects).
-- [ ] Add browser Text-to-Speech (TTS) for Skeleton sarcastic commentary on decoy triggers.
-- [ ] Add horror visual post-processing effects (vignette, film grain, bloom).
-- [ ] Verify *"Reduce Scares"* accessibility toggle across all UI screens.
+### ✅ Phase 7: Audio, Atmosphere & Accessibility (Completed)
+- [x] Integrated Web Audio synthesizers & audio buffers for room drone ambiance (`AudioEngine.js`).
+- [x] Implemented dynamic heartbeat audio proximity cue (speeds up near bugged objects).
+- [x] Added browser Text-to-Speech (TTS) voice acting for Ghost (whispery), Reaper (cold/formal), and Skeleton (raspy/sarcastic).
+- [x] Built on-screen subtitles system with character colors (`SubtitlesOverlay.jsx`).
+- [x] Added horror visual post-processing effects (vignette, film grain, scanlines) (`HorrorPostProcessing.jsx`).
+- [x] Built interactive Pause Menu overlay with `"Resume"` and `"Return to Map"` triggered on pointerlock release.
+- [x] Added celebratory sanctuary flame animation on relic purge (`CandleLightRelicAnimation.jsx`).
+- [x] Added brightness cycle toggle and master audio volume/mute controls in `RoomHUD.jsx`.
 
 ### 🔲 Phase 8: Audition Rehearsal & Documentation (Est: 2h)
 - [ ] Rehearse 5-minute audition presentation flow.
@@ -203,11 +206,13 @@
 - [x] **Phase 4**: Complete standalone playable Layer 1 single-room loop (real/decoy checks, 6 jump scares, throttled `/api/warmth` heartbeat, soft ending, found relics drawer, haunting report modal, 18/18 pytest passing).
 - [x] **Phase 5**: Cursed Map Layer (Layer 2) — 2D blueprint map with 5 rooms, whisper hints, 4 lantern visit counters, and `Escape` map return.
 - [x] **Phase 6**: Frame & Full UI Flow — Landing intro, investigator name input, lore briefing, repo input bar with instant sample button, animated scanning ritual, and 3-card role selection with dynamic presence levels.
+- [x] **Phase 7**: Audio, Atmosphere, Post-Processing & Voice Subtitles — Dynamic fog, ambient drone, door creak, Ghost/Reaper/Skeleton TTS lines, subtitles overlay, relic candle flame, pause menu on pointerlockchange, volume/mute & brightness toggles.
 
 ### ⏳ In Progress
-- [ ] **Phase 7**: Audio, Atmosphere & Skeleton TTS Commentary.
+- [ ] **Phase 8**: Audition Rehearsal & Documentation.
 
 ### 🔜 What's Next
-- Integrate ambient room drones, browser TTS for Skeleton roasts on decoy clicks, and post-processing film grain / vignette.
+- Rehearse 5-minute audition presentation walkthrough and build final `README.md` architecture diagrams.
+
 
 
