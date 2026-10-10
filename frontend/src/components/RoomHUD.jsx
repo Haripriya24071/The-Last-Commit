@@ -28,7 +28,16 @@ export default function RoomHUD() {
     fetchReport,
     returnToMap,
     resetGame,
-    role
+    startNewRepo,
+    role,
+    brightness,
+    setBrightness,
+    volume,
+    setVolume,
+    isMuted,
+    toggleMute,
+    enableSkeletonVoice,
+    toggleSkeletonVoice
   } = useGameStore()
 
   const [showDrawer, setShowDrawer] = useState(false)
@@ -217,12 +226,66 @@ export default function RoomHUD() {
           </button>
 
           {/* Score */}
-          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
+          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '10px' }}>
             <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>SCORE: </span>
             <span style={{ fontSize: '14px', color: '#fbbf24', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
               {score}
             </span>
           </div>
+
+          {/* Skeleton Voice Toggle */}
+          <button
+            onClick={toggleSkeletonVoice}
+            title="Toggle Sarcastic Skeleton TTS Voice"
+            style={{
+              background: enableSkeletonVoice ? '#7c2d12' : '#27272a',
+              color: '#fff',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '10px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            {enableSkeletonVoice ? '🗣️ SKELETON VOICE ON' : '🔇 VOICE OFF'}
+          </button>
+
+          {/* Audio Mute Button */}
+          <button
+            onClick={toggleMute}
+            title="Mute / Unmute Horror Audio"
+            style={{
+              background: isMuted ? '#991b1b' : '#27272a',
+              color: '#fff',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '10px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            {isMuted ? '🔇 MUTED' : '🔊 SOUND ON'}
+          </button>
+
+          {/* Brightness Adjuster */}
+          <button
+            onClick={() => setBrightness(brightness >= 1.6 ? 0.9 : brightness + 0.3)}
+            title="Cycle Room Brightness"
+            style={{
+              background: '#27272a',
+              color: '#fff',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '10px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            💡 {brightness.toFixed(1)}x
+          </button>
 
           {/* Reduce Scares Toggle */}
           <button
