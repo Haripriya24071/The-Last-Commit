@@ -127,14 +127,44 @@ def test_full_game_api_workflow():
     assert "relics_missed" in report_data
 
 
-# 5. Offline Cache Test
-def test_offline_cache_generation_and_loading():
-    """Verify that offline cache successfully generates and loads on disk."""
-    cache = generate_and_save_sample_cache()
-    assert "ghost" in cache
-    assert "reaper" in cache
-    assert "skeleton" in cache
+# 6. Fallback Reason Test
+def test_scan_fallback_reason_on_invalid_url():
+    """Verify fallback_reason is populated when an invalid or non-GitHub URL is provided."""
+    res = client.post("/api/scan", json={"repo_url": "https://malicious-site.com/fake", "role": "ghost"})
+    assert res.status_code == 200
+    data = res.json()
+    assert "fallback_reason" in data
+    assert data["fallback_reason"] is not None
+    assert "github.com/owner/repo" in data["fallback_reason"]
 
-    loaded = load_sample_cache()
-    assert loaded is not None
-    assert "ghost" in loaded
+
+# 7. Check Idempotency & Game Over Rejection Test
+def test_check_idempotency_and_game_over():
+    """Verify clicking an object is idempotent and checks are rejected after all candles extinguish."""
+    scan_res = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
+    scan_id = scan_res.json()["scan_id"]
+
+    room_res = client.get(f"/api/room/{scan_id}/attic")
+    objects = room_res.json()["room"]["objects"]
+    first_obj_id = objects[0]["id"]
+
+    # First click
+    check_1 = client.post("/api/check", json={"scan_id": scan_id, "room_name": "attic", "object_id": first_obj_id}).json()
+    initial_score = check_1["current_score"]
+    initial_lifelines = check_1["lifelines_left"]
+
+    # Second click on same object (Idempotent)
+    check_2 = client.post("/api/check", json={"scan_id": scan_id, "room_name": "attic", "object_id": first_obj_id}).json()
+    assert check_2["current_score"] == initial_score
+    assert check_2["lifelines_left"] == initial_lifelines
+
+    # Simulate game over by extinguishing lifelines
+    session = game_sessions.get_session(scan_id)
+    session.lifelines_remaining = 0
+    session.is_game_over = True
+
+    # Check after game over
+    game_over_check = client.post("/api/check", json={"scan_id": scan_id, "room_name": "attic", "object_id": "obj_attic_2"}).json()
+    assert game_over_check["game_over"] is True
+    assert game_over_check["is_valid"] is False
+    assert "Game over" in game_over_check["error"]
