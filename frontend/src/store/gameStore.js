@@ -59,6 +59,7 @@ export const useGameStore = create((set, get) => ({
   isMuted: false,
   healthError: null,
   fallbackReason: null,
+  activeSubtitle: null,
 
   // Screen Actions
   setScreen: (screen) => set({ currentScreen: screen }),
@@ -81,6 +82,8 @@ export const useGameStore = create((set, get) => ({
   toggleReduceScares: () => set((state) => ({ reduceScares: !state.reduceScares })),
   unlockAudio: () => set({ audioUnlocked: true }),
   setPointerLocked: (locked) => set({ isPointerLocked: locked }),
+  setSubtitle: (subtitle) => set({ activeSubtitle: subtitle }),
+  clearSubtitle: () => set({ activeSubtitle: null }),
 
   // Check Backend /health on load
   checkBackendHealth: async () => {
@@ -282,9 +285,7 @@ export const useGameStore = create((set, get) => ({
           foundRelics: [...state.foundRelics, result.relic],
           activeRelicModal: result.relic
         }))
-        if (enableSkeletonVoice) {
-          AudioEngine.speakSkeletonRoast('relic', role)
-        }
+        AudioEngine.speakVoiceLine('relic', role, get().setSubtitle, enableSkeletonVoice)
       } else {
         const availableScares = SCARE_TYPES.filter(s => s !== lastScareType)
         const nextScare = availableScares[Math.floor(Math.random() * availableScares.length)]
@@ -295,12 +296,10 @@ export const useGameStore = create((set, get) => ({
           activeScare: nextScare,
           lastScareType: nextScare
         })
-        if (enableSkeletonVoice) {
-          if (result.game_over) {
-            AudioEngine.speakSkeletonRoast('game_over', role)
-          } else {
-            AudioEngine.speakSkeletonRoast('decoy', role)
-          }
+        if (result.game_over) {
+          AudioEngine.speakVoiceLine('game_over', role, get().setSubtitle, enableSkeletonVoice)
+        } else {
+          AudioEngine.speakVoiceLine('decoy', role, get().setSubtitle, enableSkeletonVoice)
         }
       }
       return result
