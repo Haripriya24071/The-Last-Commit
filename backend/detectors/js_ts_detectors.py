@@ -307,5 +307,94 @@ class TSTypeBypassDetector(BaseDetector):
         return findings
 
 
+class JSComplexityDetector(BaseDetector):
+    """Detects excessive nesting depth and oversized functions in JS/TS source code."""
+    name = "js_complexity"
+    role = RoleType.SKELETON
+
+    def scan(self, repo_path: Path) -> List[Finding]:
+        findings: List[Finding] = []
+        files = get_js_ts_files(repo_path)
+
+        for file_path in files:
+            # Skip minified files, lock files, and tests
+            rel_path_str = str(file_path.relative_to(repo_path)).replace("\\", "/").lower()
+            if ".min." in rel_path_str or "test" in rel_path_str or "spec" in rel_path_str:
+                continue
+
+            try:
+                rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/")
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+
+                # Track function scopes and nesting
+                indent_depth = 0
+                max_nesting_in_file = 0
+                max_nesting_line = 1
+                current_function_name = None
+                current_function_start = 0
+
+                for line_idx, line in enumerate(lines, start=1):
+                    raw_stripped = line.strip()
+                    if not raw_stripped or raw_stripped.startswith("//") or raw_stripped.startswith("/*") or raw_stripped.startswith("*"):
+                        continue
+
+                    # Check function definition
+                    func_match = re.search(r'\b(?:function\s+([a-zA-Z0-9_$]+)|const\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>|(?:async\s*)?([a-zA-Z0-9_$]+)\s*\([^)]*\)\s*\{)', line)
+                    if func_match:
+                        # Check previous function length
+                        if current_function_name and current_function_start > 0:
+                            func_len = (line_idx - current_function_start)
+                            if func_len >= 55:
+                                findings.append(Finding(
+                                    id=f"js-long-func-{rel_path}-{current_function_start}",
+                                    role=self.role,
+                                    language=detect_language_by_extension(file_path),
+                                    type="oversized_function",
+                                    file=rel_path,
+                                    line=current_function_start,
+                                    snippet=f"function {current_function_name} ({func_len} lines)",
+                                    explanation=f"Function '{current_function_name}' is oversized ({func_len} lines), making maintenance and unit testing difficult.",
+                                    suggestion="Refactor large function into smaller single-responsibility helper functions.",
+                                    severity=FindingSeverity.MEDIUM,
+                                    confidence=FindingConfidence.CERTAIN
+                                ))
+
+                        fname = func_match.group(1) or func_match.group(2) or func_match.group(3) or "anonymous"
+                        current_function_name = fname
+                        current_function_start = line_idx
+
+                    # Count brace nesting
+                    open_braces = raw_stripped.count("{")
+                    close_braces = raw_stripped.count("}")
+                    indent_depth += (open_braces - close_braces)
+
+                    if indent_depth >= 5 and indent_depth > max_nesting_in_file:
+                        max_nesting_in_file = indent_depth
+                        max_nesting_line = line_idx
+
+                # If deep nesting found
+                if max_nesting_in_file >= 5:
+                    findings.append(Finding(
+                        id=f"js-deep-nesting-{rel_path}-{max_nesting_line}",
+                        role=self.role,
+                        language=detect_language_by_extension(file_path),
+                        type="deeply_nested_block",
+                        file=rel_path,
+                        line=max_nesting_line,
+                        snippet=lines[max_nesting_line - 1].strip()[:80] if max_nesting_line <= len(lines) else "nested block",
+                        explanation=f"Control flow exceeds safe nesting depth ({max_nesting_in_file} levels), introducing high cognitive load.",
+                        suggestion="Use guard clauses, early returns, or extract inner logic into separate functions.",
+                        severity=FindingSeverity.MEDIUM,
+                        confidence=FindingConfidence.CERTAIN
+                    ))
+
+            except Exception as e:
+                print(f"[JSComplexityDetector] Error scanning {file_path}: {e}")
+
+        return findings
+
+
+
 
 
