@@ -95,23 +95,55 @@ Frontend Web Client will be live at: `http://127.0.0.1:5173`
 
 ---
 
-The browser client handles user presentation and interaction, while the FastAPI backend retains absolute authority over file validity to prevent client-side inspection or cheating.
+## 🏛️ 04. System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Frontend["Frontend Client (React 18 + Three.js)"]
+        UI["UI Layer<br/>Landing / Ritual / Briefing / HUD"]
+        Three["3D Engine (@react-three/fiber)<br/>Procedural Rooms / Dynamic Fog / Lighting"]
+        Audio["Web Audio & Speech Engine<br/>Sub-bass Drone / Radar / TTS Voices"]
+        Store["Zustand State Store<br/>Lifelines / Score / Active Room / Settings"]
+    end
+
+    subgraph Backend["Backend API (FastAPI + Python)"]
+        Router["REST Endpoints<br/>/scan • /map • /room • /warmth • /check • /report"]
+        Ingester["Safe Ingestion Engine<br/>GitHub Size Check → Shallow Clone → Capping"]
+        Cache["Sample & Session Cache<br/>Local Cursed House / Scan TTL Eviction"]
+        
+        subgraph Detectors["Multi-Language Detector Plugins"]
+            T1["Tier 1 Generic<br/>Secrets, Entropy, TODOs, Git Churn"]
+            PyAST["Python AST Detectors<br/>Dead Code, Broad Excepts, Bad Defaults"]
+            JSTS["JS / TS Detectors<br/>Empty Catch, === Smell, eval/dangerouslySet, any"]
+        end
+        
+        Builder["Game World Builder<br/>Dynamic Room Topology & Decoy Balancer"]
+    end
+
+    UI --> Store
+    Three --> Store
+    Store <-->|REST API JSON| Router
+    Router --> Ingester
+    Router --> Cache
+    Router --> Detectors
+    Router --> Builder
+```
 
 ```text
        ┌────────────────────────────────────────────────────────┐
        │                BROWSER CLIENT (React + Vite)           │
-       │     Landing Dashboard → Intro/Roles → Cursed Map → 3D  │
+       │  Landing Screen → Lore Briefing → Cursed Map → 3D Room │
        └───────────────────────────┬────────────────────────────┘
                                    │ REST Calls (JSON)
        ┌───────────────────────────▼────────────────────────────┐
        │               FASTAPI BACKEND (Python)                 │
-       │         /api/scan  •  /api/map  •  /api/room           │
-       │         /api/check •  /api/report                      │
+       │    /api/scan   •   /api/map/{id}   •   /api/room/{id}   │
+       │    /api/warmth •   /api/check      •   /api/report      │
        └─────┬─────────────────────┬────────────────────┬───────┘
              │                     │                    │
    ┌─────────▼────────┐  ┌─────────▼────────┐  ┌────────▼────────┐
    │  Safe Ingester   │  │ Detector Plugins │  │  Game Builder   │
-   │ (Shallow Clone)  │  │(AST, Regex, Git) │  │(Rooms & Riddles)│
+   │ (Shallow Clone)  │  │(Python, JS/TS)   │  │(Rooms & Decoys) │
    └──────────────────┘  └──────────────────┘  └─────────────────┘
 ```
 
