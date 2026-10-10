@@ -25,6 +25,7 @@ This document lists all intentionally planted code defects in `sample_repo/`. Th
 | **R-03** | `auth/security.py` | 31 | `shell_injection` | `subprocess.run(f"ping {host}", shell=True)` | `shell=True` exposes command execution to shell injection attacks. | Use list arguments: `subprocess.run(["ping", host], shell=False)`. |
 | **R-04** | `db/database.py` | 18 | `sql_injection` | `"SELECT * FROM users WHERE username = '" + username + "'"` | Direct string concatenation in SQL queries enables SQL Injection (SQLi). | Use parameterized query: `"SELECT * FROM users WHERE username = ?", (username,)`. |
 | **R-05** | `auth/security.py` | 6 | `debug_mode` | `DEBUG = True` | Debug mode exposes detailed stack traces and internal variables in production. | Set `DEBUG = False` in production configs. |
+| **R-06** | `.env` | 1 | `committed_env_file` | `.env committed in repository` | Committed .env file leaks local credentials and environment configuration. | Add .env to .gitignore and inject variables at runtime. |
 
 ---
 
@@ -36,6 +37,7 @@ This document lists all intentionally planted code defects in `sample_repo/`. Th
 | **S-02** | `tests/test_core.py` | 28 | `dead_code` | `def unused_phantom_calculation():` | Defined function that is never called anywhere across the entire codebase. | Remove dead / orphaned code. |
 | **S-03** | `utils/helpers.py` | 38 | `vague_naming` | `a = 42; b = 10; c = a * b` | Meaningless single-character variable names impair code readability. | Use descriptive identifier names like `retry_count` and `timeout_seconds`. |
 | **S-04** | `sample_repo` root | - | `missing_docs` | No comprehensive documentation | Missing module docstrings and explanatory comments for complex workflows. | Add docstrings explaining function inputs, outputs, and side-effects. |
+| **S-05** | `src/parser.py` | 14 | `todo_comment` | `# TODO: Implement strict hexadecimal...` | Unresolved TODO marker left in codebase. | Complete the feature or convert to tracked issue. |
 
 ---
 
