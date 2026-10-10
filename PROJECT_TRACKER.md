@@ -8,14 +8,15 @@
 
 | Metric / Category | Status | Details |
 | :--- | :--- | :--- |
-| **Current Active Phase** | `Phase 0: Setup` | Initializing tracking, repo scaffolding, sample codebase |
-| **Next Up** | `Phase 0 & Phase 1` | Cursed sample project setup & Python static detectors |
-| **Overall Completion** | `0%` | Ready to begin Phase 0 |
+| **Current Active Phase** | `Phase 1: Code Scanner & Detectors` | Implementing Ghost, Reaper, and Skeleton detectors |
+| **Completed Phase** | `Phase 0: Setup & Scaffolding` | Scaffolding, Backend API proof, 3D proof cube, Cursed Sample Repo |
+| **Next Up** | `Phase 2: API Engine` | FastAPI endpoints for scan, map, room, and check |
+| **Overall Completion** | `15%` | Phase 0 verified & passing |
 | **Architecture Mode** | `2-Layer Design` | Layer 1 (Single Room Core Loop) ➡️ Layer 2 (Full Mansion Map) |
 
 ```
 [Phase 0: Setup] ➔ [Phase 1: Scanner] ➔ [Phase 2: API] ➔ [Phase 3: 3D Room] ➔ [Phase 4: Game Logic] ➔ [Phase 5: Map] ➔ [Phase 6: Frame] ➔ [Phase 7: Polish] ➔ [Phase 8: Rehearse]
-      ⚪                 ⚪                  ⚪                ⚪                  ⚪                 ⚪              ⚪               ⚪                ⚪
+      🟢                 🟡                  ⚪                ⚪                  ⚪                 ⚪              ⚪               ⚪                ⚪
 ```
 
 ---
@@ -113,13 +114,16 @@
 
 ## 📋 Comprehensive Phase Roadmap & Tasks
 
-### 🔲 Phase 0: Setup & Scaffolding (Est: 2h)
-- [ ] Set up monorepo / project structure (`/frontend` React-Vite, `/backend` FastAPI).
-- [ ] Create `cursed_sample_repo/` with intentionally planted bugs for all 3 roles:
-  - Unclosed file, bare except, mutable default argument.
-  - Fake hardcoded API key, `shell=True`, `eval()`.
-  - Monster 100+ line function, dead code function, weak commit history.
-- [ ] Create documentation of all planted problems for reference testing.
+### ✅ Phase 0: Setup & Scaffolding (Completed)
+- [x] Set up monorepo / project structure (`/frontend` React-Vite, `/backend` FastAPI, `/sample_repo`).
+- [x] Create `sample_repo/` with intentionally planted bugs for all 3 roles:
+  - Ghost: Unclosed file, bare except, mutable default argument, unreachable code, unused import.
+  - Reaper: Hardcoded API key, `shell=True`, `eval()`, SQL string concatenation, debug mode.
+  - Skeleton: High cyclomatic complexity (>10), dead function, vague identifier names.
+- [x] Create `sample_repo/PLANTED.md` mapping out every planted problem and ground truth.
+- [x] Create `CREDITS.md` with open permissive licenses for 3D assets, sounds, and typography.
+- [x] Verify backend environment (`fastapi`, `pytest`, `radon`, `vulture`, `ruff`) with passing test.
+- [x] Verify frontend environment (`React 18`, `Three.js`, `@react-three/fiber`, `@react-three/drei`, `Zustand`) with spinning 3D proof cube.
 
 ### 🔲 Phase 1: Code Scanner & Detectors (Est: 5h)
 - [ ] Define standardized `Finding` schema (JSON structure for all roles).
