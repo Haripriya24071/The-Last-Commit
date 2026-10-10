@@ -147,12 +147,22 @@ flowchart TD
    └──────────────────┘  └──────────────────┘  └─────────────────┘
 ```
 
-### Core API Endpoints
-- `POST /api/scan`: Ingests a repository link or triggers the local sample, executing static analysis detectors and returning a unique scan ID.
-- `GET /api/map/{scan}`: Supplies the mansion's room topology and spooky atmospheric signals (without revealing object answers).
-- `GET /api/room/{scan}/{room}`: Provides spatial object nodes and environmental riddles for a selected room.
-- `POST /api/check`: Evaluates a player's interaction click server-side, returning whether the file is real or a decoy alongside forensic evidence.
-- `GET /api/report/{scan}`: Compiles the comprehensive *Haunting Report* breakdown.
+## 📡 05. REST API Reference
+
+All endpoints return and accept JSON. If an error occurs, the server responds with a structured horror-themed error payload (`{ "error": true, "status_code": int, "detail": str, "message": str }`).
+
+| Method | Endpoint | Description | Request Body / Params |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Root status banner & game version. | None |
+| `GET` | `/health` | Liveness healthcheck. | None |
+| `POST` | `/api/scan` | Clones/ingests repo, executes detector registry, creates session. | `{ "repo_url": "https://github.com/...", "role": "ghost" \| "reaper" \| "skeleton" }` |
+| `GET` | `/api/map/{scan_id}` | Returns 5-room mansion layout, visits left, and whisper clues. | `scan_id` (path param) |
+| `POST` | `/api/enter-room` | Spends 1 lantern visit (max 4) and unlocks room entry. | `{ "scan_id": "...", "room_name": "library" }` |
+| `GET` | `/api/room/{scan_id}/{room}` | Retrieves 3D object nodes, spatial coordinates, and wall riddle. | `scan_id`, `room_name` (path params) |
+| `POST` | `/api/warmth` | Computes quantized (5-level) distance warmth (0.0–1.0) for heartbeat radar. | `{ "scan_id": "...", "room_name": "library", "x": 0.0, "y": 1.6, "z": -2.0 }` |
+| `POST` | `/api/check` | Evaluates clicked 3D object server-side. Returns relic details or jump scare damage. | `{ "scan_id": "...", "room_name": "library", "object_id": "obj_01" }` |
+| `GET` | `/api/report/{scan_id}` | Generates Haunting Report (cleansed relics, missed relics, rank, code fixes). | `scan_id` (path param) |
+| `POST` | `/api/cache/refresh` | Re-generates the local offline sample repository cache. | None |
 
 ---
 
