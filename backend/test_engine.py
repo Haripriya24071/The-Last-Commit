@@ -168,3 +168,25 @@ def test_check_idempotency_and_game_over():
     assert game_over_check["game_over"] is True
     assert game_over_check["is_valid"] is False
     assert "Game over" in game_over_check["error"]
+
+
+# 8. Warmth Proximity API Test
+def test_warmth_proximity_endpoint():
+    """Verify /api/warmth returns valid 0.0-1.0 warmth without leaking secret data."""
+    scan_res = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
+    scan_id = scan_res.json()["scan_id"]
+
+    # Post warmth from room origin (0, 1.6, 0)
+    warmth_res = client.post("/api/warmth", json={
+        "scan_id": scan_id,
+        "room_name": "attic",
+        "x": 0.0,
+        "y": 1.6,
+        "z": 0.0
+    })
+    assert warmth_res.status_code == 200
+    data = warmth_res.json()
+    assert "warmth" in data
+    assert 0.0 <= data["warmth"] <= 1.0
+    assert "has_relics" in data
+
