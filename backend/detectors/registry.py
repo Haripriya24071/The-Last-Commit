@@ -60,6 +60,14 @@ def map_file_to_room(file_rel_path: str) -> str:
     return "attic"
 
 
+SEVERITY_RANK = {
+    "critical": 0,
+    "high": 1,
+    "medium": 2,
+    "low": 3,
+}
+
+
 class DetectorRegistry:
     """Manages registered detector plugins and executes repository scans."""
 
@@ -78,9 +86,12 @@ class DetectorRegistry:
         """Registers a new detector plugin dynamically."""
         self._detectors.append(detector)
 
-    def scan_repository(self, repo_path: Path, role: Optional[RoleType] = None) -> List[Finding]:
-        """Scans repository using active detectors filtered by role."""
-        all_findings: List[Finding] = []
+    def scan_repository(self, repo_path: Path, role: Optional[RoleType] = None, max_findings: int = 10) -> List[Finding]:
+        """
+        Scans repository using active detectors filtered by role.
+        Applies severity prioritization and caps max 3 per defect type for diverse mansion challenges.
+        """
+        raw_findings: List[Finding] = []
         seen_keys = set()
 
         for detector in self._detectors:
@@ -97,13 +108,28 @@ class DetectorRegistry:
                     dedup_key = (finding.role, finding.type, finding.file, finding.line)
                     if dedup_key not in seen_keys:
                         seen_keys.add(dedup_key)
-                        all_findings.append(finding)
+                        raw_findings.append(finding)
             except Exception as e:
-                # Keep scanner robust against individual plugin errors
                 print(f"[Scanner] Error in {detector.name}: {e}")
 
-        return all_findings
+        # 1. Sort by severity (Critical -> High -> Medium -> Low)
+        raw_findings.sort(key=lambda f: SEVERITY_RANK.get(f.severity.value, 2))
+
+        # 2. Cap to max 3 findings per type per role
+        type_counts: Dict[str, int] = {}
+        diverse_findings: List[Finding] = []
+        for finding in raw_findings:
+            key = f"{finding.role.value}:{finding.type}"
+            count = type_counts.get(key, 0)
+            if count < 3:
+                type_counts[key] = count + 1
+                diverse_findings.append(finding)
+            if len(diverse_findings) >= max_findings:
+                break
+
+        return diverse_findings
 
 
 # Global singleton scanner registry instance
 default_scanner = DetectorRegistry()
+
