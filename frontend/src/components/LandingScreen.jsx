@@ -3,16 +3,47 @@ import { useGameStore } from '../store/gameStore'
 import { AudioEngine } from './AudioEngine'
 
 export default function LandingScreen() {
-  const { playerName, setPlayerName, setScreen, unlockAudio } = useGameStore()
+  const {
+    playerName,
+    setPlayerName,
+    setScreen,
+    unlockAudio,
+    reduceScares,
+    toggleReduceScares
+  } = useGameStore()
+
   const [nameInput, setNameInput] = useState(playerName || 'Investigator')
+  const [showIntroRitual, setShowIntroRitual] = useState(false)
+  const [showIntroScare, setShowIntroScare] = useState(false)
 
   const handleEnter = () => {
-    // Unlock Web Audio context on user gesture
+    // 1. Initialize Web Audio Context on user gesture
     AudioEngine.init()
-    AudioEngine.playHeartbeat(0.5)
     unlockAudio()
-    setPlayerName(nameInput.trim() || 'Investigator')
-    setScreen('welcome')
+
+    const chosenName = nameInput.trim() || 'Investigator'
+    setPlayerName(chosenName)
+    setShowIntroRitual(true)
+
+    // 2. Play subtle heartbeat
+    AudioEngine.playHeartbeat(0.6)
+
+    // 3. Trigger short intro scare after brief delay
+    setTimeout(() => {
+      if (reduceScares) {
+        AudioEngine.playHeartbeat(1.0)
+      } else {
+        AudioEngine.playIntroScare()
+      }
+      setShowIntroScare(true)
+
+      // 4. Move to welcome briefing after 900ms
+      setTimeout(() => {
+        setShowIntroScare(false)
+        setShowIntroRitual(false)
+        setScreen('welcome')
+      }, reduceScares ? 600 : 950)
+    }, 1200)
   }
 
   return (
@@ -32,7 +63,7 @@ export default function LandingScreen() {
       boxSizing: 'border-box'
     }}>
       
-      {/* Background Eerie Particles / Ambient Glow */}
+      {/* Background Ambient Glow */}
       <div style={{
         position: 'absolute',
         width: '450px',
@@ -71,7 +102,7 @@ export default function LandingScreen() {
         fontSize: 'clamp(13px, 1.8vw, 17px)',
         color: '#fca5a5',
         marginTop: '8px',
-        marginBottom: '32px',
+        marginBottom: '28px',
         letterSpacing: '1px',
         fontStyle: 'italic',
         textAlign: 'center'
@@ -81,17 +112,17 @@ export default function LandingScreen() {
 
       {/* Investigator Name Card */}
       <div style={{
-        background: 'rgba(18, 14, 28, 0.85)',
+        background: 'rgba(18, 14, 28, 0.88)',
         border: '1px solid rgba(239, 68, 68, 0.3)',
         borderRadius: '16px',
         padding: '28px 32px',
-        maxWidth: '420px',
+        maxWidth: '440px',
         width: '100%',
         boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
         backdropFilter: 'blur(12px)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '18px'
+        gap: '16px'
       }}>
         <div>
           <label style={{
@@ -125,7 +156,37 @@ export default function LandingScreen() {
           />
         </div>
 
-        {/* Enter / Audio Unlock Button */}
+        {/* Accessibility & Volume Controls on Screen 1 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '8px',
+          padding: '8px 12px'
+        }}>
+          <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
+            🔊 Volume Recommended
+          </span>
+          <button
+            onClick={toggleReduceScares}
+            style={{
+              background: reduceScares ? '#065f46' : '#27272a',
+              color: '#fff',
+              border: 'none',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '10px',
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            {reduceScares ? '🛡️ MILD SCARES' : '👻 FULL SCARES'}
+          </button>
+        </div>
+
+        {/* Enter Button */}
         <button
           onClick={handleEnter}
           style={{
@@ -147,7 +208,67 @@ export default function LandingScreen() {
         </button>
       </div>
 
-      {/* Footer credits / edition tag */}
+      {/* Intro Welcome & Short Jump Scare Overlay */}
+      {showIntroRitual && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: showIntroScare && !reduceScares
+            ? 'radial-gradient(circle, rgba(185,28,28,0.98) 0%, rgba(0,0,0,0.99) 70%)'
+            : 'rgba(5, 3, 10, 0.96)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 90,
+          animation: showIntroScare && !reduceScares ? 'shakeScreen 0.1s infinite' : 'none'
+        }}>
+          {showIntroScare ? (
+            <>
+              <span style={{ fontSize: '100px', filter: 'drop-shadow(0 0 25px #ef4444)' }}>
+                👻💀
+              </span>
+              <h1 style={{
+                fontFamily: 'Creepster, cursive',
+                fontSize: '48px',
+                color: '#fff',
+                letterSpacing: '3px',
+                margin: '12px 0 0 0',
+                textShadow: '0 0 20px #ef4444'
+              }}>
+                THE GATES UNSEAL!
+              </h1>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '48px', marginBottom: '16px', animation: 'candleFlicker 1s infinite' }}>
+                🕯️
+              </span>
+              <h2 style={{
+                fontFamily: 'Cinzel Decorative, serif',
+                fontSize: '26px',
+                color: '#f87171',
+                letterSpacing: '2px',
+                textAlign: 'center',
+                margin: 0
+              }}>
+                Welcome, {nameInput.trim() || 'Investigator'}.
+              </h2>
+              <p style={{
+                color: '#fca5a5',
+                fontSize: '15px',
+                fontStyle: 'italic',
+                marginTop: '8px'
+              }}>
+                The house has been waiting...
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Footer */}
       <footer style={{
         position: 'absolute',
         bottom: '20px',
