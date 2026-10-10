@@ -74,9 +74,23 @@ def get_latest_commit_hash(repo_dir: Path) -> Optional[str]:
     return None
 
 
+def safe_remove_directory(path: Path):
+    """Safely removes directory on Windows even with read-only .git files."""
+    if not path.exists():
+        return
+    import stat
+    def on_error(fn, p, excinfo):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            fn(p)
+        except Exception:
+            pass
+    shutil.rmtree(path, onexc=on_error)
+
+
 def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict[str, float]]:
     """
-    Ingests a repository for scanning with precise timing logs.
+    Ingests a repository for scanning with precise timing logs and robust local caching.
     Returns: (repo_path, is_temp, fallback_reason, timing_metrics)
     """
     timing: Dict[str, float] = {
@@ -105,16 +119,19 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
 
     owner, repo_name, canonical_clone_url = parsed
 
-    # 4. Fast Cache Check: Check if repository was recently cached
+    # 4. Fast Cache Check: Check if repository was already successfully cloned with source files
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cached_repo_dir = CACHE_DIR / f"{owner}_{repo_name}"
+    
+    # Valid cache requires both .git and actual source files
     if cached_repo_dir.exists() and (cached_repo_dir / ".git").exists():
-        t0 = time.time()
-        # Fast pull or use cached state
-        timing["cached_hit"] = 1.0
-        timing["clone_time_sec"] = round(time.time() - t0, 3)
-        print(f"[Ingester] [CACHE HIT] for {owner}/{repo_name}: using cached clone")
-        return cached_repo_dir, False, None, timing
+        file_count = len([f for f in cached_repo_dir.iterdir() if not f.name.startswith(".")])
+        if file_count >= 1:
+            t0 = time.time()
+            timing["cached_hit"] = 1.0
+            timing["clone_time_sec"] = round(time.time() - t0, 3)
+            print(f"[Ingester] [CACHE HIT] for {owner}/{repo_name} ({file_count} root files)")
+            return cached_repo_dir, False, None, timing
 
     # 5. Pre-check via GitHub API
     t_api = time.time()
@@ -132,8 +149,7 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
     temp_dir = cached_repo_dir
 
     try:
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        safe_remove_directory(temp_dir)
 
         cmd = ["git", "clone", "--depth", "50", canonical_clone_url, str(temp_dir)]
         res = subprocess.run(
@@ -145,7 +161,7 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
         timing["clone_time_sec"] = round(time.time() - t_clone, 3)
 
         if res.returncode != 0:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            safe_remove_directory(temp_dir)
             err_snip = res.stderr.strip().splitlines()[-1] if res.stderr.strip() else "Clone failed"
             reason = f"Git clone failed: {err_snip}"
             return SAMPLE_REPO_PATH, False, reason, timing
@@ -153,17 +169,17 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
         print(f"[Ingester] [CLONED] {owner}/{repo_name} (--depth 50) in {timing['clone_time_sec']}s")
         return temp_dir, False, None, timing
 
-
     except subprocess.TimeoutExpired:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        safe_remove_directory(temp_dir)
         return SAMPLE_REPO_PATH, False, f"Git clone timed out after {CLONE_TIMEOUT_SECONDS}s.", timing
     except Exception as e:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        safe_remove_directory(temp_dir)
         return SAMPLE_REPO_PATH, False, f"Ingestion error: {str(e)}", timing
 
 
 def cleanup_temp_repo(repo_path: Path, is_temp: bool):
     """Safely cleans up temporary clone folders if marked as temporary."""
     if is_temp and repo_path.exists():
-        shutil.rmtree(repo_path, ignore_errors=True)
+        safe_remove_directory(repo_path)
+
 
