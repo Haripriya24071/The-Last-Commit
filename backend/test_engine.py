@@ -315,17 +315,17 @@ def test_distinct_relic_sets_per_role_on_sample():
     # Ghost Session
     ghost_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"}).json()
     ghost_session = game_sessions.get_session(ghost_scan["scan_id"])
-    ghost_relic_types = {f["type"] for f in ghost_session.relics_all}
+    ghost_relic_types = {f.type for f in ghost_session.findings}
 
     # Reaper Session
     reaper_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "reaper"}).json()
     reaper_session = game_sessions.get_session(reaper_scan["scan_id"])
-    reaper_relic_types = {f["type"] for f in reaper_session.relics_all}
+    reaper_relic_types = {f.type for f in reaper_session.findings}
 
     # Skeleton Session
     skeleton_scan = client.post("/api/scan", json={"repo_url": "sample", "role": "skeleton"}).json()
     skeleton_session = game_sessions.get_session(skeleton_scan["scan_id"])
-    skeleton_relic_types = {f["type"] for f in skeleton_session.relics_all}
+    skeleton_relic_types = {f.type for f in skeleton_session.findings}
 
     assert len(ghost_relic_types) > 0
     assert len(reaper_relic_types) > 0
