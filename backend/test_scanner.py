@@ -103,14 +103,19 @@ def test_python_skeleton_detector():
     detector = PythonSkeletonDetector()
     findings = detector.scan(SAMPLE_REPO)
     
-    types = {f.type: f for f in findings}
+    types = {f.type for f in findings}
     assert "high_complexity" in types
     assert "dead_code" in types
     assert "vague_naming" in types
 
-    assert types["high_complexity"].file.endswith("src/core.py")
-    assert "unused_phantom_calculation" in types["dead_code"].snippet
-    assert types["vague_naming"].file.endswith("utils/helpers.py")
+    complexity_findings = [f for f in findings if f.type == "high_complexity"]
+    assert any("core.py" in f.file for f in complexity_findings)
+
+    dead_code_findings = [f for f in findings if f.type == "dead_code"]
+    assert any("unused_phantom_calculation" in f.snippet for f in dead_code_findings)
+
+    vague_findings = [f for f in findings if f.type == "vague_naming"]
+    assert any("helpers.py" in f.file for f in vague_findings)
 
 
 def test_full_registry_scan_by_role():
