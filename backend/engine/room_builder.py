@@ -1,0 +1,198 @@
+"""
+Mansion Room Builder & 3D Object Spatial Layout Engine.
+Dynamically balances repository files across 5 rooms, assigns 3D coordinates, and generates whispers & riddles.
+"""
+import random
+from pathlib import Path
+from typing import List, Dict, Any, Tuple
+from detectors.base import Finding, get_scan_files, should_ignore_path
+from detectors.registry import map_file_to_room
+
+ROOM_NAMES = ["library", "cellar", "chapel", "study", "attic"]
+
+ROOM_METADATA = {
+    "library": {
+        "title": "The Grand Library",
+        "description": "Towering bookshelves, floating parchment pages, and shifting ladders.",
+        "theme_color": "#38bdf8",
+        "default_riddle": "Ancient scrolls hold logic that loops into madness.",
+    },
+    "cellar": {
+        "title": "The Forgotten Cellar",
+        "description": "Dripping water, rusted barrels, and eerie emerald glow.",
+        "theme_color": "#22c55e",
+        "default_riddle": "Deep in the stone, corrupted queries breach the foundation.",
+    },
+    "chapel": {
+        "title": "The Stained Chapel",
+        "description": "Cracked stained glass, blood-red lighting, and a silent organ.",
+        "theme_color": "#ef4444",
+        "default_riddle": "A sacred door was left unlocked to any wandering wraith.",
+    },
+    "study": {
+        "title": "The Haunted Study",
+        "description": "A heavy oak desk, flickering candle, and open haunted diary.",
+        "theme_color": "#eab308",
+        "default_riddle": "Words written in dust test truths never spoken.",
+    },
+    "attic": {
+        "title": "The Cobwebbed Attic",
+        "description": "Creaking floorboards, forgotten relics, and a swinging naked bulb.",
+        "theme_color": "#a855f7",
+        "default_riddle": "Forgotten tools open passageways that are never closed.",
+    }
+}
+
+OBJECT_MODELS = ["chest", "portrait", "mirror", "clock", "doll", "skull", "cauldron", "tome"]
+
+# 3D spatial positions around the room perimeter in meters [x, y, z]
+SPATIAL_COORDINATES = [
+    [-3.2, 0.0, -2.5],
+    [3.2, 0.0, -2.5],
+    [-2.8, 0.0, 2.8],
+    [2.8, 0.0, 2.8],
+    [0.0, 0.0, -4.2],
+    [0.0, 0.0, 3.8],
+]
+
+RIDDLE_TEMPLATES = {
+    "unclosed_file": "Something here opens a door and never closes it.",
+    "bare_except": "A desperate cry swallows every scream without question.",
+    "mutable_default": "A container retains past sins across multiple lifetimes.",
+    "unreachable_code": "Steps lead into the dark after the journey has already ended.",
+    "hardcoded_secret": "A secret was whispered in plain sight upon the stone.",
+    "eval_exec": "A cursed mirror executes whatever phrase is spoken to it.",
+    "shell_injection": "An open window invites the storm directly inside.",
+    "sql_injection": "Words stitched with strings crumble the temple walls.",
+    "debug_mode": "The curtains were left wide open to the cold night.",
+    "high_complexity": "A labyrinth with a dozen branching pathways traps the mind.",
+    "dead_code": "A spectral chamber exists that no living soul ever visits.",
+    "vague_naming": "Shadows without true names obscure the path forward.",
+    "todo_comment": "An unfinished promise was abandoned to rot.",
+    "committed_env_file": "A ledger of forbidden keys rests upon the table."
+}
+
+
+def balance_files_across_rooms(repo_path: Path, findings: List[Finding]) -> Dict[str, List[Path]]:
+    """
+    Groups repository files into 5 rooms dynamically.
+    Ensures no room is left empty when there are sufficient files.
+    """
+    all_files = get_scan_files(repo_path)
+    if not all_files:
+        # Fallback dummy files if directory is empty
+        all_files = [repo_path / f"file_{i}.py" for i in range(5)]
+
+    room_files: Dict[str, List[Path]] = {r: [] for r in ROOM_NAMES}
+
+    # Step 1: Initial mapping by folder heuristic
+    for f in all_files:
+        rel_str = str(f.relative_to(repo_path)).replace("\\", "/")
+        assigned_room = map_file_to_room(rel_str)
+        room_files[assigned_room].append(f)
+
+    # Step 2: Dynamic balancing — if any room is empty, pull from the most crowded room
+    if len(all_files) >= 5:
+        for room in ROOM_NAMES:
+            if len(room_files[room]) == 0:
+                # Find the room with the most files
+                fullest_room = max(ROOM_NAMES, key=lambda r: len(room_files[r]))
+                if len(room_files[fullest_room]) > 1:
+                    # Move a file to the empty room
+                    moved_file = room_files[fullest_room].pop()
+                    room_files[room].append(moved_file)
+
+    return room_files
+
+
+def calculate_whisper_signal(findings_count: int, seed: int = 42) -> Dict[str, str]:
+    """
+    Computes atmospheric whisper signal with slight seeded variation.
+    >= 3 problems: Cold spot (severe)
+    2 problems: Scratching in the walls (moderate)
+    1 problem: Flickering lights (minor)
+    0 problems: Silence (clean)
+    """
+    if findings_count >= 3:
+        signal = "cold_spot"
+        text = "❄️ Cold spot: The air drops to freezing. Multiple spirits haunt this room."
+    elif findings_count == 2:
+        signal = "scratching"
+        text = "🐀 Scratching in the walls: Uneasy rhythms echo from behind the plaster."
+    elif findings_count == 1:
+        signal = "flickering_lights"
+        text = "💡 Flickering lights: Subtle shadows dance across the floorboards."
+    else:
+        signal = "silence"
+        text = "🤫 Silence: A calm draft... but stay vigilant."
+
+    return {
+        "signal": signal,
+        "text": text,
+        "intensity": min(findings_count, 3)
+    }
+
+
+def generate_room_riddle(room_name: str, room_findings: List[Finding]) -> str:
+    """Generates an atmospheric riddle for the room wall based on the room's bug types."""
+    if room_findings:
+        primary_finding = room_findings[0]
+        if primary_finding.type in RIDDLE_TEMPLATES:
+            return RIDDLE_TEMPLATES[primary_finding.type]
+    return ROOM_METADATA[room_name]["default_riddle"]
+
+
+def build_room_objects(
+    room_name: str,
+    files: List[Path],
+    repo_path: Path,
+    findings: List[Finding]
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Builds 4 to 6 3D room objects.
+    Public objects return to browser WITHOUT 'is_real' or 'finding' payloads.
+    Server-side map retains real vs decoy mapping for /api/check.
+    """
+    # Finding lookup by relative file
+    findings_by_file: Dict[str, Finding] = {}
+    for f in findings:
+        findings_by_file[f.file] = f
+
+    # Select up to 6 files for this room
+    selected_files = files[:6]
+    random.seed(room_name)
+    shuffled_models = list(OBJECT_MODELS)
+    random.shuffle(shuffled_models)
+
+    public_objects = []
+    server_truth = {}
+
+    for idx, file_path in enumerate(selected_files):
+        rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/") if file_path.is_relative_to(repo_path) else file_path.name
+        obj_id = f"obj_{room_name}_{idx + 1}"
+        pos = SPATIAL_COORDINATES[idx % len(SPATIAL_COORDINATES)]
+        model_type = shuffled_models[idx % len(shuffled_models)]
+
+        # Determine if this file holds a real finding
+        has_finding = rel_path in findings_by_file
+        finding_data = findings_by_file.get(rel_path)
+
+        # Public data (sent to browser)
+        public_objects.append({
+            "id": obj_id,
+            "filename": rel_path,
+            "display_name": file_path.name,
+            "model_type": model_type,
+            "position": pos,
+            "glow_color": "#fbbf24"
+        })
+
+        # Server-side ground truth (kept secret until clicked)
+        server_truth[obj_id] = {
+            "is_real": has_finding,
+            "finding": finding_data.model_dump() if finding_data else None,
+            "filename": rel_path,
+            "obj_id": obj_id
+        }
+
+    return public_objects, server_truth
