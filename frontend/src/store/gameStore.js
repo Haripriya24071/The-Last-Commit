@@ -11,9 +11,11 @@ const SCARE_TYPES = [
 
 const loadSavedSettings = () => {
   try {
-    const raw = localStorage.getItem('the_last_commit_settings')
-    if (raw) {
-      return JSON.parse(raw)
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem('the_last_commit_settings')
+      if (raw) {
+        return JSON.parse(raw)
+      }
     }
   } catch (e) {
     console.warn("Could not load saved settings:", e)
@@ -30,11 +32,14 @@ const loadSavedSettings = () => {
 
 const saveSettings = (newSettings) => {
   try {
-    localStorage.setItem('the_last_commit_settings', JSON.stringify(newSettings))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('the_last_commit_settings', JSON.stringify(newSettings))
+    }
   } catch (e) {
     console.warn("Could not persist settings:", e)
   }
 }
+
 
 const initialSettings = loadSavedSettings()
 
