@@ -9,6 +9,11 @@ from .tier1_agnostic import AgnosticReaperDetector, AgnosticSkeletonDetector
 from .python_ghost import PythonGhostDetector
 from .python_reaper import PythonReaperDetector
 from .python_skeleton import PythonSkeletonDetector
+from .js_ts_detectors import (
+    JSEmptyCatchDetector, JSLooseEqualityDetector, JSConsoleLogDetector,
+    JSReaperSecurityDetector, TSTypeBypassDetector, JSComplexityDetector
+)
+
 
 
 ROOM_MAPPINGS = {
@@ -80,7 +85,15 @@ class DetectorRegistry:
             PythonGhostDetector(),
             PythonReaperDetector(),
             PythonSkeletonDetector(),
+            # Tier 3 JS/TS Plugins
+            JSEmptyCatchDetector(),
+            JSLooseEqualityDetector(),
+            JSConsoleLogDetector(),
+            JSReaperSecurityDetector(),
+            TSTypeBypassDetector(),
+            JSComplexityDetector(),
         ]
+
 
     def register(self, detector: BaseDetector):
         """Registers a new detector plugin dynamically."""

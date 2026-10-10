@@ -9,6 +9,10 @@ from .tier1_agnostic import AgnosticReaperDetector, AgnosticSkeletonDetector
 from .python_ghost import PythonGhostDetector
 from .python_reaper import PythonReaperDetector
 from .python_skeleton import PythonSkeletonDetector
+from .js_ts_detectors import (
+    JSEmptyCatchDetector, JSLooseEqualityDetector, JSConsoleLogDetector,
+    JSReaperSecurityDetector, TSTypeBypassDetector, JSComplexityDetector
+)
 from .registry import DetectorRegistry, default_scanner, map_file_to_room
 
 __all__ = [
@@ -22,6 +26,12 @@ __all__ = [
     "PythonGhostDetector",
     "PythonReaperDetector",
     "PythonSkeletonDetector",
+    "JSEmptyCatchDetector",
+    "JSLooseEqualityDetector",
+    "JSConsoleLogDetector",
+    "JSReaperSecurityDetector",
+    "TSTypeBypassDetector",
+    "JSComplexityDetector",
     "DetectorRegistry",
     "default_scanner",
     "map_file_to_room",
@@ -29,3 +39,4 @@ __all__ = [
     "should_ignore_path",
     "mask_secret"
 ]
+
