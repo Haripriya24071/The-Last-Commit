@@ -27,12 +27,19 @@ All assets used in *The Last Commit* adhere to open, royalty-free, and permissiv
   - *Source*: Freesound.org (CC0).
 - **Wrong Click 6 (Ghostly Laughter)**: Eerie pitch-shifted chuckling.
   - *Source*: Freesound.org (CC0).
-- **Ambient Room Audio**: Dark drone, dungeon water dripping, crackling fireplace.
-  - *Source*: Generated ambient horror soundscapes (CC0).
-- **Skeleton Voice**: Browser Speech Synthesis API (`window.speechSynthesis`) with low-pitch & slow rate configuration.
+- **Ambient Room Audio**: Procedural 45Hz sub-bass binaural drone, dungeon dripping, and creaking iron door synthesis.
+  - *Source*: Real-time Web Audio API Procedural Synthesizers.
+  - *Licence*: MIT / CC0.
+- **Narrator Voices (Ghost, Reaper, Skeleton)**:
+  - *Ghost*: Whispery pitch-shifted spectral synthesis (`pitch: 1.15`, `rate: 0.85`).
+  - *Reaper*: Cold, formal monotone cadence (`pitch: 0.45`, `rate: 0.78`).
+  - *Skeleton*: Raspy, sarcastic tone (`pitch: 0.58`, `rate: 0.95`).
+  - *Source*: Browser Speech Synthesis API (`window.speechSynthesis`).
+  - *Licence*: Browser native / Public Domain.
 
 ---
 
-## 🔤 Typography
+## 🔤 Typography & Shaders
 - **Creepster / Nosifer / Cinzel Decorative**: Google Fonts (OFL - Open Font License).
 - **Inter / Fira Code / JetBrains Mono**: Google Fonts (OFL - Open Font License).
+- **Horror Post-Processing Shaders (CRT, Vignette, Fog)**: Custom Three.js & CSS shader implementations (MIT).
