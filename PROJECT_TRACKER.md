@@ -188,10 +188,18 @@
 ### ✅ Completed
 - [x] Initialized project roadmap and master tracking ledger `PROJECT_TRACKER.md`.
 - [x] Captured all specifications from Turing Club Audition 2026 design briefing.
+- [x] **Phase 0**: Project scaffolding (`backend/`, `frontend/`, `sample_repo/`, `assets/`, `CREDITS.md`).
+- [x] Backend FastAPI environment setup, CORS middleware, and test suite passing (`backend/test_health.py`).
+- [x] Frontend React 18 + Three.js + R3F 3D environment setup and verification with spinning haunted cube.
+- [x] Planted cursed bugs across 5 mansion rooms and documented ground truth in `sample_repo/PLANTED.md`.
+- [x] Connected and synchronized all files to GitHub repository (`main`).
 
 ### ⏳ In Progress
-- [ ] **Phase 0**: Project Scaffolding & Cursed Sample Repository setup.
+- [ ] **Phase 1**: Code Scanner & Detectors (Ghost, Reaper, Skeleton AST and static analysis plugins).
 
 ### 🔜 What's Next
-- Create folder structure for `frontend` and `backend`.
-- Create `cursed_sample_repo/` with rich planted bugs across Python files for Ghost, Reaper, and Skeleton roles.
+- Build the shared `Finding` schema and detector base interface.
+- Implement Ghost logic/runtime error detector (`ast`, unclosed files, bare excepts, mutable defaults).
+- Implement Reaper security detector (secrets entropy, `eval`, `shell=True`, SQL concatenation).
+- Implement Skeleton code judge detector (`radon` complexity, dead code, commit logs).
+- Write automated detector validation tests against `sample_repo/`.
