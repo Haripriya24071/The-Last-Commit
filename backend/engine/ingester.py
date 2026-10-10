@@ -113,7 +113,7 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
         # Fast pull or use cached state
         timing["cached_hit"] = 1.0
         timing["clone_time_sec"] = round(time.time() - t0, 3)
-        print(f"[Ingester] ⚡ Cache HIT for {owner}/{repo_name}: using cached clone")
+        print(f"[Ingester] [CACHE HIT] for {owner}/{repo_name}: using cached clone")
         return cached_repo_dir, False, None, timing
 
     # 5. Pre-check via GitHub API
@@ -150,8 +150,9 @@ def ingest_repository(repo_target: str) -> Tuple[Path, bool, Optional[str], Dict
             reason = f"Git clone failed: {err_snip}"
             return SAMPLE_REPO_PATH, False, reason, timing
 
-        print(f"[Ingester] 📥 Cloned {owner}/{repo_name} (--depth 50) in {timing['clone_time_sec']}s")
+        print(f"[Ingester] [CLONED] {owner}/{repo_name} (--depth 50) in {timing['clone_time_sec']}s")
         return temp_dir, False, None, timing
+
 
     except subprocess.TimeoutExpired:
         shutil.rmtree(temp_dir, ignore_errors=True)
