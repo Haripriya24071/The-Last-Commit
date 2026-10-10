@@ -39,18 +39,17 @@ Hidden among the objects are the real problems in your code (bugs, security flaw
 
 The architecture separates concerns cleanly between a high-performance modern frontend and a secure Python analysis backend.
 
-| Layer | Tool / Technology | Why It Was Chosen |
+| Layer | Tool / Technology | Details & Role in Architecture |
 | :--- | :--- | :--- |
-| **Frontend UI & Dashboard** | React + Vite | Fast setup; unifies the landing dashboard and game interface into a single smooth package. |
-| **3D Rendering & Controls** | Three.js via `react-three-fiber` & `drei` | Industry standard for declarative 3D in React, supplying robust first-person camera and scene primitives. |
-| **Atmospheric Post-Processing** | `postprocessing` (Bloom, Film Grain, Vignette), Fog, Point Lights | Lightweight effects that instantly transform a basic 3D scene into a cinematic horror atmosphere. |
-| **State Management** | Zustand | Minimalist and lightweight for tracking lifelines, score, found items, and active room state. |
-| **Audio & Voice FX** | Howler.js & Web Speech Synthesis | Reliable multi-channel audio handling alongside zero-cost browser-native voice synthesis for the Skeleton judge. |
-| **3D Assets** | Optimized Free glTF Mansion Models & Props | Saves manual modeling time while maintaining high visual fidelity. |
-| **Backend API** | Python + FastAPI | Python provides the richest ecosystem for static code analysis, and FastAPI delivers lightning-fast async endpoints. |
-| **Static Analysis Engine** | Python `ast`, `ruff`/`pyflakes`, `radon`, `vulture`, Regex + Entropy, `git log` | Deep, production-grade inspection tools that evaluate abstract syntax trees, metrics, complexity, and commit history safely. |
-| **Ingestion Pipeline** | Shallow Git Clone (`--depth 1`) into Temp Directory | Ultra-fast data fetch with strict size and time bounds, automatically wiped post-scan. |
-| **Caching Layer** | In-Memory + JSON Cache | Eliminates external network dependency for the built-in cursed sample project, ensuring offline demo reliability. |
+| **Frontend UI & Dashboard** | React 18 + Vite | Modular UI with cinematic dark gothic styling, landing screen, briefing, and report modal. |
+| **3D Rendering & Controls** | Three.js via `@react-three/fiber` & `@react-three/drei` | Procedural 3D Victorian rooms, dynamic lighting, interactive relics/decoys, floating 3D labels, and PointerLock controls with escape-pause menu. |
+| **Horror Atmosphere & Shaders** | Custom WebGL shaders & CSS post-processing | Dynamic horror vignette, scanlines, flickering torches, and candle flame animations (with FAST performance toggle). |
+| **State Management** | Zustand (`gameStore.js`) | Client-side game state (lifelines, score, active room, visited rooms, found relics, settings). |
+| **Audio & Voice FX Engine** | Web Audio API + Web Speech API | Procedural 45Hz sub-bass binaural drone, dynamic heartbeat radar (`/api/warmth`), creaking iron door synth, and distinct text-to-speech voices for Ghost, Reaper, and Skeleton. |
+| **Backend Framework** | Python 3.11+ / FastAPI + Uvicorn | High-performance asynchronous REST API with structured exception handling and input validation. |
+| **Static Analysis Engine** | Python `ast`, JavaScript/TypeScript detectors, Shannon Entropy, `git log` | Multi-language static analyzer extracting security leaks, ghost bugs, complexity smells, and technical debt. |
+| **Ingestion Pipeline** | Shallow Git Clone (`--depth 50`) & Local Cache | Safe repository cloning with file capping (400 files), GitHub API size validation, and offline cache fallback. |
+| **Testing & Quality** | Pytest + Vitest | Comprehensive backend unit tests and frontend store testing. |
 
 ---
 
