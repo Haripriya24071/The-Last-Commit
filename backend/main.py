@@ -74,18 +74,16 @@ def scan_repository_endpoint(payload: ScanRequest):
     """
     Ingests repository, executes detectors, and builds the 5-room haunted mansion.
     """
-    repo_path, is_temp, error_msg = ingest_repository(payload.repo_url or "sample")
+    repo_path, is_temp, fallback_reason = ingest_repository(payload.repo_url or "sample")
     
     try:
         session = game_sessions.create_session(
             repo_path=repo_path,
             repo_target=payload.repo_url or "sample",
-            role=payload.role
+            role=payload.role,
+            fallback_reason=fallback_reason
         )
-        map_view = session.to_map_view()
-        if error_msg:
-            map_view["warning"] = error_msg
-        return map_view
+        return session.to_map_view()
     finally:
         cleanup_temp_repo(repo_path, is_temp)
 
@@ -134,8 +132,8 @@ def check_object_endpoint(payload: CheckRequest):
         object_id=payload.object_id
     )
 
-    if not result.get("is_valid", True):
-        raise HTTPException(status_code=400, detail=result.get("error", "Invalid check request"))
+    if result.get("error") and "Invalid" in result["error"]:
+        raise HTTPException(status_code=400, detail=result["error"])
 
     return result
 
