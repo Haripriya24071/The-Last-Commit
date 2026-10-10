@@ -170,9 +170,9 @@ def test_check_idempotency_and_game_over():
     assert "Game over" in game_over_check["error"]
 
 
-# 8. Warmth Proximity API Test
+# 8. Warmth Proximity API & Quantization Test
 def test_warmth_proximity_endpoint():
-    """Verify /api/warmth returns valid 0.0-1.0 warmth without leaking secret data."""
+    """Verify /api/warmth returns quantized 5-level warmth and clamps coordinates safely."""
     scan_res = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
     scan_id = scan_res.json()["scan_id"]
 
@@ -187,6 +187,41 @@ def test_warmth_proximity_endpoint():
     assert warmth_res.status_code == 200
     data = warmth_res.json()
     assert "warmth" in data
-    assert 0.0 <= data["warmth"] <= 1.0
+    # Value must be quantized to one of 5 levels
+    assert data["warmth"] in {0.0, 0.25, 0.5, 0.75, 1.0}
     assert "has_relics" in data
+
+    # Test out-of-bounds coordinates (should clamp without error)
+    warmth_clamped = client.post("/api/warmth", json={
+        "scan_id": scan_id,
+        "room_name": "attic",
+        "x": 999.0,
+        "y": -50.0,
+        "z": -999.0
+    })
+    assert warmth_clamped.status_code == 200
+    assert warmth_clamped.json()["warmth"] in {0.0, 0.25, 0.5, 0.75, 1.0}
+
+
+# 9. Haunting Report Mid-game Privacy Test
+def test_haunting_report_midgame_privacy():
+    """Verify missed relics are hidden during active gameplay and only revealed after game over."""
+    scan_res = client.post("/api/scan", json={"repo_url": "sample", "role": "ghost"})
+    scan_id = scan_res.json()["scan_id"]
+
+    # Mid-game check (game is not finished)
+    mid_report = client.get(f"/api/report/{scan_id}").json()
+    assert mid_report["is_game_finished"] is False
+    assert mid_report["relics_missed"] == []  # Completely hidden mid-game!
+
+    # Trigger game over
+    session = game_sessions.get_session(scan_id)
+    session.lifelines_remaining = 0
+    session.is_game_over = True
+
+    # Post-game check
+    final_report = client.get(f"/api/report/{scan_id}").json()
+    assert final_report["is_game_finished"] is True
+    assert len(final_report["relics_missed"]) > 0  # Revealed after game ends
+
 
