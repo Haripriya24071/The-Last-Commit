@@ -10,14 +10,15 @@ const SCARE_TYPES = [
 ]
 
 export const useGameStore = create((set, get) => ({
-  // Game state
+  // Game navigation state
+  currentView: 'map', // 'map' | 'room'
   scanId: null,
   role: 'ghost',
   currentRoom: 'library',
   isScanning: false,
   isDevMode: true,
   lowQuality: false,
-  reduceScares: false, // Accessibility toggle
+  reduceScares: false,
 
   // Player state
   lifelines: 4,
@@ -37,6 +38,7 @@ export const useGameStore = create((set, get) => ({
 
   // Map & Room data from API
   mansionMap: null,
+  rolePresence: { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
   roomData: null,
   isLoadingRoom: false,
 
@@ -46,58 +48,101 @@ export const useGameStore = create((set, get) => ({
 
   // Actions
   setRole: (role) => set({ role }),
+  setView: (view) => set({ currentView: view }),
   toggleQuality: () => set((state) => ({ lowQuality: !state.lowQuality })),
   toggleDevMode: () => set((state) => ({ isDevMode: !state.isDevMode })),
   toggleReduceScares: () => set((state) => ({ reduceScares: !state.reduceScares })),
   unlockAudio: () => set({ audioUnlocked: true }),
   setPointerLocked: (locked) => set({ isPointerLocked: locked }),
 
-  // Set active scan session
+  // Set active scan session from API
   setScanSession: (mapData) => set({
     scanId: mapData.scan_id,
     role: mapData.role,
     mansionMap: mapData.rooms,
+    rolePresence: mapData.role_presence || { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
     lifelines: mapData.lifelines_left ?? 4,
     lanternVisitsLeft: mapData.lantern_visits_left ?? 4,
-    currentRoom: 'library',
     showReport: false
   }),
 
-  // Fetch room data from API (/api/room/{scan_id}/{room_name})
-  fetchRoom: async (scanId, roomName) => {
-    set({ isLoadingRoom: true, currentRoom: roomName, showReport: false })
+  // Fetch Mansion Map via /api/map/{scanId} or initiate scan
+  fetchMansionMap: async (repoUrl = 'sample') => {
+    set({ isScanning: true })
     try {
-      let targetScanId = scanId
-      if (!targetScanId) {
-        const scanRes = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repo_url: 'sample', role: get().role })
-        })
-        const scanData = await scanRes.json()
-        targetScanId = scanData.scan_id
-        set({
-          scanId: targetScanId,
-          mansionMap: scanData.rooms,
-          lifelines: scanData.lifelines_left,
-          lanternVisitsLeft: scanData.lantern_visits_left
-        })
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo_url: repoUrl, role: get().role })
+      })
+      const data = await res.json()
+      set({
+        scanId: data.scan_id,
+        role: data.role,
+        mansionMap: data.rooms,
+        rolePresence: data.role_presence || { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
+        lifelines: data.lifelines_left ?? 4,
+        lanternVisitsLeft: data.lantern_visits_left ?? 4,
+        isScanning: false,
+        currentView: 'map'
+      })
+      return data
+    } catch (err) {
+      console.error('Error scanning repo:', err)
+      set({ isScanning: false })
+    }
+  },
+
+  // Enter a room by spending 1 Lantern Visit via POST /api/enter-room
+  enterRoom: async (roomName) => {
+    let { scanId, role } = get()
+    set({ isLoadingRoom: true })
+
+    try {
+      if (!scanId) {
+        // Init scan first if not existing
+        const mapData = await get().fetchMansionMap('sample')
+        scanId = mapData.scan_id
       }
 
-      const res = await fetch(`/api/room/${targetScanId}/${roomName}`)
-      if (!res.ok) throw new Error('Failed to fetch room')
+      const res = await fetch('/api/enter-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scan_id: scanId, room_name: roomName })
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.detail || 'Cannot enter room.')
+        set({ isLoadingRoom: false })
+        return
+      }
+
       const data = await res.json()
-      set({ roomData: data.room, isLoadingRoom: false })
+      set({
+        currentRoom: roomName,
+        roomData: data.room,
+        lanternVisitsLeft: data.lantern_visits_left,
+        lifelines: data.lifelines_left,
+        isGameOver: data.game_over || false,
+        currentView: 'room',
+        isLoadingRoom: false
+      })
     } catch (err) {
-      console.error('Error fetching room data:', err)
+      console.error('Error entering room:', err)
       set({ isLoadingRoom: false })
     }
   },
 
+  // Return to Map (Esc / door click) without spending a lantern visit
+  returnToMap: () => {
+    set({ currentView: 'map', isPointerLocked: false })
+  },
+
   // Update player position warmth via POST /api/warmth
   updateWarmth: async (x, y, z) => {
-    const { scanId, currentRoom, isGameOver } = get()
-    if (!scanId || isGameOver) return
+    const { scanId, currentRoom, isGameOver, currentView } = get()
+    if (!scanId || isGameOver || currentView !== 'room') return
 
     try {
       const res = await fetch('/api/warmth', {
@@ -125,7 +170,7 @@ export const useGameStore = create((set, get) => ({
 
   // Handle Object Click via POST /api/check
   checkObject: async (objectId) => {
-    const { scanId, currentRoom, lifelines, isGameOver, lastScareType } = get()
+    const { scanId, currentRoom, isGameOver, lastScareType } = get()
     if (!scanId || isGameOver) return
 
     try {
@@ -147,7 +192,6 @@ export const useGameStore = create((set, get) => ({
           activeRelicModal: result.relic
         }))
       } else {
-        // Select next jump scare never repeating the last one
         const availableScares = SCARE_TYPES.filter(s => s !== lastScareType)
         const nextScare = availableScares[Math.floor(Math.random() * availableScares.length)]
 
@@ -192,7 +236,9 @@ export const useGameStore = create((set, get) => ({
     activeRelicModal: null,
     activeScare: null,
     showReport: false,
-    hauntingReport: null
+    hauntingReport: null,
+    currentView: 'map'
   })
 }))
+
 
