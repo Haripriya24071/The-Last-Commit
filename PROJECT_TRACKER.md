@@ -150,13 +150,16 @@
 - [x] Implemented raycasting / pointer hover glow & heartbeat audio cue.
 - [x] Added `⚡ FAST (60FPS)` / `✨ HIGH` low-quality toggle and Dev Mode room switcher.
 
-### 🔲 Phase 4: Core Game Loop (Layer 1 Playable) (Est: 4h)
-- [ ] Implement Zustand game store (lifelines, score, found relics, current room, visited rooms).
-- [ ] Connect object clicks to backend `/api/check`.
-- [ ] Trigger relic discovery modal and award points (+100 per relic).
-- [ ] Implement jump scare triggers on decoy clicks (1 candle lost, shake/flash FX).
-- [ ] Implement Game Over / Soft ending when all 4 candles are snuffed out.
-- [ ] **CHECKPOINT LAYER 1**: Complete standalone playable single-room game.
+### ✅ Phase 4: Core Game Loop (Layer 1 Playable) (Completed)
+- [x] Implemented Zustand game store with live API synchronization (`useGameStore.js`).
+- [x] Connected object clicks to backend `POST /api/check`.
+- [x] Built Relic discovery modal (+100 pts, gold glow, chime audio, code snippet & fix suggestions).
+- [x] Built 6 distinct non-repeating jump scares (Door Slam, Ghost Face, Lights Out, Skeleton Pop-up, Mirror Shatter, Eerie Laughter).
+- [x] Built Soft Ending Screen ("The house wins this time" retry modal with cleansed relics stats & retry action).
+- [x] Implemented throttled `/api/warmth` proximity probing to drive dynamic heartbeat pulse without leaking bug identities.
+- [x] Added `Reduce Scares` accessibility toggle (mild flicker & low thud instead of full jump scare).
+- [x] Built Comprehensive Haunting Report payoff screen with rank calculation (*Ghost Whisperer*, *Haunted Soul*, *Fresh Meat*).
+- [x] **CHECKPOINT LAYER 1**: Complete standalone playable single-room hunt verified.
 
 ### 🔲 Phase 5: Cursed Map Layer (Est: 3h)
 - [ ] Design 2D interactive blueprint map UI overlay.
@@ -196,11 +199,12 @@
 - [x] **Phase 2**: FastAPI Backend Engine (`/scan`, `/map`, `/room`, `/check`, `/report`), shallow clone `--depth 50` ingester, GitHub API size pre-check, dynamic room balancing, server-side real/decoy evaluator, fallback for suspiciously clean repos, and offline local cache.
 - [x] Verified live scan on public Python (`pallets/click`) and JavaScript (`expressjs/express`) repos.
 - [x] **Phase 3**: 3D First-Person Room (`ProceduralRoom.jsx`, `Props3D.jsx`, `FirstPersonController.jsx`, `RoomHUD.jsx`, `AudioEngine.js`), WASD navigation, pointer lock with audio context unlock, low-quality toggle, and dev mode room switcher.
+- [x] **Phase 4**: Complete standalone playable Layer 1 single-room loop (real/decoy checks, 6 jump scares, throttled `/api/warmth` heartbeat, soft ending, found relics drawer, haunting report modal, 18/18 pytest passing).
 
 ### ⏳ In Progress
-- [ ] **Phase 4**: Core Game Loop (Layer 1 Playable) — Connect object clicks to check API, lifelines, score, and 6 jump scares.
+- [ ] **Phase 5**: Cursed Map Layer (Layer 2) — 2D blueprint map with 5 rooms, whisper hints, and 4 lantern visit counters.
 
 ### 🔜 What's Next
-- Build the jump scare animation sequences (Door Slam, Ghost Face, Lights Out, Skeleton Pop-up, Mirror Shatter, Eerie Laughter).
-- Connect soft ending ("The house wins this time" retry modal when 4 candles extinguished).
-- Verify Checkpoint Layer 1: Standalone complete playable single-room hunt.
+- Build 2D mansion blueprint map UI with room select buttons and dynamic atmospheric whisper hints.
+- Wire transitions: Map ➡️ Room ➡️ Check Relics ➡️ Consume Lantern Visit ➡️ Return to Map ➡️ Haunting Report.
+
