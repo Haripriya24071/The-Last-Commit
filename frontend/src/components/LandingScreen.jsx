@@ -1,284 +1,369 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { AudioEngine } from './AudioEngine'
 
 export default function LandingScreen() {
-  const {
-    playerName,
-    setPlayerName,
-    setScreen,
-    unlockAudio,
-    reduceScares,
-    toggleReduceScares
-  } = useGameStore()
+  const { playerName, setPlayerName, setScreen } = useGameStore()
 
-  const [nameInput, setNameInput] = useState(playerName || 'Investigator')
-  const [showIntroRitual, setShowIntroRitual] = useState(false)
-  const [showIntroScare, setShowIntroScare] = useState(false)
+  // Stages: 'match_flash' -> 'blood_spill' -> 'letter_scene'
+  const [stage, setStage] = useState('match_flash')
+  const [nameInput, setNameInput] = useState(playerName || '')
+  const [matchStruck, setMatchStruck] = useState(false)
 
-  const handleEnter = () => {
-    // 1. Initialize Web Audio Context on user gesture
-    AudioEngine.init()
-    unlockAudio()
+  // Handle clicking the match to trigger blood spill wipe
+  const handleStrikeMatch = () => {
+    if (matchStruck) return
+    setMatchStruck(true)
 
-    const chosenName = nameInput.trim() || 'Investigator'
-    setPlayerName(chosenName)
-    setShowIntroRitual(true)
-
-    // 2. Play subtle heartbeat
-    AudioEngine.playHeartbeat(0.6)
-
-    // 3. Trigger short intro scare after brief delay
+    // Trigger dramatic blood spill transition after 400ms flare
     setTimeout(() => {
-      if (reduceScares) {
-        AudioEngine.playHeartbeat(1.0)
-      } else {
-        AudioEngine.playIntroScare()
-      }
-      setShowIntroScare(true)
-
-      // 4. Move to welcome briefing after 900ms
+      setStage('blood_spill')
       setTimeout(() => {
-        setShowIntroScare(false)
-        setShowIntroRitual(false)
-        setScreen('welcome')
-      }, reduceScares ? 600 : 950)
-    }, 1200)
+        setStage('letter_scene')
+      }, 1600)
+    }, 450)
+  }
+
+  const handleProceedToGates = () => {
+    const chosen = nameInput.trim() || 'Investigator'
+    setPlayerName(chosen)
+    setScreen('role_select')
   }
 
   return (
     <div style={{
       width: '100vw',
       height: '100vh',
-      background: 'radial-gradient(circle at 50% 40%, #170f24 0%, #050308 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      color: '#e5e7eb',
-      fontFamily: 'Inter, sans-serif',
+      background: '#040306',
       position: 'relative',
       overflow: 'hidden',
-      padding: '24px',
-      boxSizing: 'border-box'
+      color: '#e5e7eb',
+      fontFamily: 'Inter, sans-serif',
+      userSelect: 'none'
     }}>
-      
-      {/* Background Ambient Glow */}
-      <div style={{
-        position: 'absolute',
-        width: '450px',
-        height: '450px',
-        background: 'radial-gradient(circle, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
-        borderRadius: '50%',
-        filter: 'blur(40px)',
-        pointerEvents: 'none',
-        animation: 'candleFlicker 4s infinite'
-      }} />
 
-      {/* Atmospheric Candle Icon */}
-      <div style={{
-        fontSize: '64px',
-        marginBottom: '16px',
-        filter: 'drop-shadow(0 0 25px rgba(245, 158, 11, 0.8))',
-        animation: 'candleFlicker 1.8s infinite'
-      }}>
-        🕯️
-      </div>
-
-      {/* Main Title */}
-      <h1 style={{
-        fontFamily: 'Cinzel Decorative, serif',
-        fontSize: 'clamp(32px, 5vw, 54px)',
-        color: '#ef4444',
-        margin: 0,
-        letterSpacing: '3px',
-        textAlign: 'center',
-        textShadow: '0 0 25px rgba(239, 68, 68, 0.5)'
-      }}>
-        THE LAST COMMIT
-      </h1>
-
-      <p style={{
-        fontSize: 'clamp(13px, 1.8vw, 17px)',
-        color: '#fca5a5',
-        marginTop: '8px',
-        marginBottom: '28px',
-        letterSpacing: '1px',
-        fontStyle: 'italic',
-        textAlign: 'center'
-      }}>
-        A Haunted Mansion of Corrupted Code
-      </p>
-
-      {/* Investigator Name Card */}
-      <div style={{
-        background: 'rgba(18, 14, 28, 0.88)',
-        border: '1px solid rgba(239, 68, 68, 0.3)',
-        borderRadius: '16px',
-        padding: '28px 32px',
-        maxWidth: '440px',
-        width: '100%',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
-        backdropFilter: 'blur(12px)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <div>
-          <label style={{
-            display: 'block',
-            fontSize: '11px',
-            color: '#9ca3af',
-            fontFamily: 'JetBrains Mono, monospace',
-            marginBottom: '6px',
-            letterSpacing: '1px'
-          }}>
-            INVESTIGATOR IDENTITY:
-          </label>
-          <input
-            type="text"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleEnter()}
-            placeholder="Enter your name..."
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              background: 'rgba(9, 6, 15, 0.8)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '8px',
-              color: '#fff',
-              fontSize: '14px',
-              fontFamily: 'JetBrains Mono, monospace',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        {/* Accessibility & Volume Controls on Screen 1 */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '8px',
-          padding: '8px 12px'
-        }}>
-          <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
-            🔊 Volume Recommended
-          </span>
-          <button
-            onClick={toggleReduceScares}
-            style={{
-              background: reduceScares ? '#065f46' : '#27272a',
-              color: '#fff',
-              border: 'none',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              fontSize: '10px',
-              cursor: 'pointer',
-              fontFamily: 'JetBrains Mono, monospace'
-            }}
-          >
-            {reduceScares ? '🛡️ MILD SCARES' : '👻 FULL SCARES'}
-          </button>
-        </div>
-
-        {/* Enter Button */}
-        <button
-          onClick={handleEnter}
+      {/* ========================================================
+          STAGE 1: Title & Match Strike (Reference Image 2)
+          "Are You Afraid of the Dark?"
+      ======================================================== */}
+      {stage === 'match_flash' && (
+        <div
+          onClick={handleStrikeMatch}
           style={{
-            padding: '14px',
-            background: '#dc2626',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: 700,
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
             cursor: 'pointer',
-            letterSpacing: '1px',
-            fontFamily: 'Inter, sans-serif',
-            boxShadow: '0 0 20px rgba(220, 38, 38, 0.4)',
-            transition: 'transform 0.15s, background 0.15s'
+            background: 'radial-gradient(circle at 50% 60%, #150a06 0%, #060305 60%, #000 100%)',
+            transition: 'filter 0.4s'
           }}
         >
-          🕯️ LIGHT THE CANDLE & ENTER
-        </button>
-      </div>
+          {/* Subtle Ambient Fog Layer */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 60%)',
+            animation: 'candleFlicker 3s infinite ease-in-out'
+          }} />
 
-      {/* Intro Welcome & Short Jump Scare Overlay */}
-      {showIntroRitual && (
+          {/* Title from Reference Image 2 */}
+          <div style={{ textAlign: 'center', zIndex: 10, marginBottom: '24px' }}>
+            <h1 style={{
+              fontFamily: 'Cinzel Decorative, serif',
+              fontSize: '44px',
+              fontWeight: 900,
+              color: '#f59e0b',
+              margin: '0 0 6px 0',
+              letterSpacing: '3px',
+              textShadow: '0 0 35px rgba(245, 158, 11, 0.7), 0 0 60px rgba(220, 38, 38, 0.5)',
+              transform: matchStruck ? 'scale(1.08)' : 'scale(1.0)',
+              transition: 'transform 0.4s ease'
+            }}>
+              Are You Afraid of the Dark?
+            </h1>
+            <p style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '13px',
+              color: '#d97706',
+              letterSpacing: '4px',
+              textTransform: 'uppercase',
+              margin: 0
+            }}>
+              THE CODEBASE HAS A MEMORY
+            </p>
+          </div>
+
+          {/* The Hand Cupping the Burning Match (Reference Image 2) */}
+          <div style={{
+            position: 'relative',
+            width: '280px',
+            height: '280px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: matchStruck ? 'none' : 'matchGlow 2.5s infinite ease-in-out'
+          }}>
+            {/* Matchstick Head & Flame Graphic */}
+            <div style={{
+              width: '18px',
+              height: '38px',
+              background: 'radial-gradient(ellipse at 50% 80%, #ffffff 0%, #fbbf24 35%, #ef4444 80%, transparent 100%)',
+              borderRadius: '50% 50% 35% 35%',
+              filter: 'drop-shadow(0 0 20px #f59e0b) drop-shadow(0 0 45px #ef4444)',
+              transform: matchStruck ? 'scale(2.2)' : 'scale(1.0)',
+              transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              marginBottom: '-4px'
+            }} />
+
+            {/* Wooden Match Stick */}
+            <div style={{
+              width: '5px',
+              height: '55px',
+              background: 'linear-gradient(to bottom, #451a03, #78350f)',
+              borderRadius: '2px',
+              boxShadow: '0 0 10px rgba(0,0,0,0.8)'
+            }} />
+
+            {/* Hand Silhouette Graphic beneath match */}
+            <div style={{
+              fontSize: '48px',
+              marginTop: '-16px',
+              filter: 'drop-shadow(0 0 15px rgba(245, 158, 11, 0.4))'
+            }}>
+              🖐️
+            </div>
+          </div>
+
+          {/* Action Prompt */}
+          <div style={{
+            marginTop: '36px',
+            padding: '10px 24px',
+            background: 'rgba(24, 16, 28, 0.75)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '9999px',
+            color: '#fde68a',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '12px',
+            letterSpacing: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)'
+          }}>
+            <span>🔥</span>
+            <span>STRIKE THE MATCH TO AWAKEN THE HOUSE</span>
+          </div>
+        </div>
+      )}
+
+
+      {/* ========================================================
+          STAGE 2: Blood Spill Transition (User's Exact Directive)
+          "after candle a big blood spills on screen cover screen"
+      ======================================================== */}
+      {stage === 'blood_spill' && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: showIntroScare && !reduceScares
-            ? 'radial-gradient(circle, rgba(185,28,28,0.98) 0%, rgba(0,0,0,0.99) 70%)'
-            : 'rgba(5, 3, 10, 0.96)',
-          backdropFilter: 'blur(20px)',
+          background: 'radial-gradient(ellipse at 50% 20%, #450a0a 0%, #1f0202 50%, #050204 100%)',
+          zIndex: 100,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 90,
-          animation: showIntroScare && !reduceScares ? 'shakeScreen 0.1s infinite' : 'none'
+          animation: 'bloodDripWipe 1.6s cubic-bezier(0.77, 0, 0.175, 1) forwards'
         }}>
-          {showIntroScare ? (
-            <>
-              <span style={{ fontSize: '100px', filter: 'drop-shadow(0 0 25px #ef4444)' }}>
-                👻💀
-              </span>
-              <h1 style={{
-                fontFamily: 'Creepster, cursive',
-                fontSize: '48px',
-                color: '#fff',
-                letterSpacing: '3px',
-                margin: '12px 0 0 0',
-                textShadow: '0 0 20px #ef4444'
-              }}>
-                THE GATES UNSEAL!
-              </h1>
-            </>
-          ) : (
-            <>
-              <span style={{ fontSize: '48px', marginBottom: '16px', animation: 'candleFlicker 1s infinite' }}>
-                🕯️
-              </span>
-              <h2 style={{
-                fontFamily: 'Cinzel Decorative, serif',
-                fontSize: '26px',
-                color: '#f87171',
-                letterSpacing: '2px',
-                textAlign: 'center',
-                margin: 0
-              }}>
-                Welcome, {nameInput.trim() || 'Investigator'}.
-              </h2>
-              <p style={{
-                color: '#fca5a5',
-                fontSize: '15px',
-                fontStyle: 'italic',
-                marginTop: '8px'
-              }}>
-                The house has been waiting...
-              </p>
-            </>
-          )}
+          {/* Organic Blood Flow Drips */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            background: 'linear-gradient(to bottom, #7f1d1d, #450a0a, #030205)',
+            clipPath: 'polygon(0% 0%, 100% 0%, 100% 85%, 80% 98%, 60% 82%, 40% 95%, 20% 86%, 0% 92%)'
+          }} />
+
+          <h2 style={{
+            position: 'relative',
+            zIndex: 10,
+            fontFamily: 'Cinzel Decorative, serif',
+            fontSize: '42px',
+            color: '#fecaca',
+            letterSpacing: '5px',
+            textShadow: '0 0 30px #ef4444',
+            margin: 0
+          }}>
+            THE HOUSE REMEMBERS
+          </h2>
         </div>
       )}
 
-      {/* Footer */}
-      <footer style={{
-        position: 'absolute',
-        bottom: '20px',
-        color: '#6b7280',
-        fontSize: '11px',
-        fontFamily: 'JetBrains Mono, monospace',
-        textAlign: 'center'
-      }}>
-        Turing Club Auditions 2026 • Halloween Edition • Built with Three.js & FastAPI
-      </footer>
+
+      {/* ========================================================
+          STAGE 3: Bloodstained Floorboard Letter & Key (Reference Image 3)
+          "Now, you must find her." + Broken Typewriter Name Entry
+      ======================================================== */}
+      {stage === 'letter_scene' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          background: 'radial-gradient(circle at 50% 30%, #171c26 0%, #0a0e17 50%, #030408 100%)',
+          padding: '24px',
+          boxSizing: 'border-box'
+        }}>
+          {/* Moonlit Misty Window in Background (Reference Image 3) */}
+          <div style={{
+            position: 'absolute',
+            top: '30px',
+            width: '140px',
+            height: '180px',
+            border: '8px solid #1e293b',
+            borderRadius: '4px',
+            background: 'radial-gradient(circle at 50% 50%, #94a3b8 0%, #334155 70%, #0f172a 100%)',
+            boxShadow: '0 0 80px rgba(148, 163, 184, 0.35)',
+            opacity: 0.6,
+            pointerEvents: 'none'
+          }}>
+            {/* Window crossbars */}
+            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '4px', background: '#1e293b' }} />
+            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '4px', background: '#1e293b' }} />
+          </div>
+
+          {/* Decaying Wooden Floorboards Base */}
+          <div style={{
+            position: 'relative',
+            zIndex: 10,
+            maxWidth: '680px',
+            width: '100%',
+            background: 'rgba(16, 12, 22, 0.95)',
+            border: '2px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '16px',
+            padding: '36px 44px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.95), 0 0 40px rgba(239, 68, 68, 0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}>
+
+            {/* Antique Iron Skeleton Key Icon (Reference Image 3) */}
+            <div style={{
+              fontSize: '44px',
+              marginBottom: '10px',
+              filter: 'drop-shadow(0 0 16px rgba(245, 158, 11, 0.5))'
+            }}>
+              🗝️
+            </div>
+
+            {/* Bloodstained Letter Note from Reference Image 3 */}
+            <div style={{
+              background: '#f8fafc',
+              backgroundImage: 'radial-gradient(circle at 75% 25%, #fecaca 0%, #fef08a 40%, #e2e8f0 100%)',
+              color: '#0f172a',
+              padding: '24px 36px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+              transform: 'rotate(-1.5deg)',
+              marginBottom: '28px',
+              maxWidth: '480px',
+              width: '100%'
+            }}>
+              <p style={{
+                fontFamily: 'Cinzel Decorative, serif',
+                fontSize: '24px',
+                fontWeight: 900,
+                color: '#7f1d1d',
+                fontStyle: 'italic',
+                margin: '0 0 6px 0',
+                letterSpacing: '1px'
+              }}>
+                "Now, you must find her."
+              </p>
+              <span style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '11px',
+                color: '#64748b'
+              }}>
+                — A message left beside the iron key on the wet floorboards.
+              </span>
+            </div>
+
+            {/* Broken Typewriter Name Entry Input */}
+            <label style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '12px',
+              color: '#f87171',
+              letterSpacing: '2px',
+              marginBottom: '10px',
+              fontWeight: 700
+            }}>
+              WHO DARES TO ENTER? INSCRIBE YOUR NAME:
+            </label>
+
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="Enter Investigator Name..."
+              maxLength={24}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleProceedToGates()
+              }}
+              style={{
+                width: '100%',
+                maxWidth: '380px',
+                padding: '14px 20px',
+                background: '#0a0812',
+                border: '2px solid rgba(239, 68, 68, 0.5)',
+                borderRadius: '8px',
+                color: '#fff',
+                fontFamily: 'Cinzel Decorative, serif',
+                fontSize: '18px',
+                textAlign: 'center',
+                letterSpacing: '2px',
+                outline: 'none',
+                boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.8), 0 0 15px rgba(239, 68, 68, 0.25)',
+                marginBottom: '24px'
+              }}
+            />
+
+            {/* Pick Up Key Button */}
+            <button
+              onClick={handleProceedToGates}
+              style={{
+                padding: '14px 36px',
+                background: '#dc2626',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '14px',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                boxShadow: '0 0 25px rgba(220, 38, 38, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🗝️</span>
+              <span>TAKE THE KEY & ENTER THE GATES</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
