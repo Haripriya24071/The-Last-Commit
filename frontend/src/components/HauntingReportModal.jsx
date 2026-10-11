@@ -49,15 +49,22 @@ export default function HauntingReportModal() {
         }}
       >
         {/* Header Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '32px' }}>📜👑</span>
-              <h2 style={{ margin: 0, fontFamily: 'Cinzel Decorative, serif', color: '#ef4444', fontSize: '24px', letterSpacing: '1px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '32px',
+                height: '44px',
+                borderRadius: '2px',
+                overflow: 'hidden'
+              }}>
+                <img src="/assets/candle_returns.jpg" alt="Purified Seal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <h2 style={{ margin: 0, fontFamily: 'Cinzel Decorative, serif', color: '#ef4444', fontSize: '24px', letterSpacing: '2px' }}>
                 HAUNTING REPORT
               </h2>
             </div>
-            <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', marginTop: '4px', display: 'block' }}>
               INVESTIGATOR: {playerName.toUpperCase()} • {hauntingReport.repo || 'Repository'}
             </span>
           </div>
@@ -68,12 +75,12 @@ export default function HauntingReportModal() {
               background: 'transparent',
               border: 'none',
               color: '#9ca3af',
-              fontSize: '22px',
-              cursor: 'pointer',
-              lineHeight: 1
+              fontSize: '13px',
+              fontFamily: 'JetBrains Mono, monospace',
+              cursor: 'pointer'
             }}
           >
-            ✕
+            [CLOSE]
           </button>
         </div>
 
@@ -124,8 +131,8 @@ export default function HauntingReportModal() {
 
         {/* 1. Cleansed Relics List */}
         <div style={{ marginBottom: '28px' }}>
-          <h4 style={{ color: '#4ade80', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace', margin: '0 0 12px 0' }}>
-            ✨ CLEANSED CORRUPTED RELICS ({relicsList.length}):
+          <h4 style={{ color: '#4ade80', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', margin: '0 0 12px 0', letterSpacing: '1px' }}>
+            CLEANSED CORRUPTED RELICS ({relicsList.length}):
           </h4>
           {relicsList.length === 0 ? (
             <p style={{ color: '#6b7280', fontSize: '12px', fontStyle: 'italic', margin: 0 }}>
@@ -178,8 +185,8 @@ export default function HauntingReportModal() {
         {/* 2. Revealed Missed Relics (Only after game is finished) */}
         {hauntingReport.is_game_finished && hauntingReport.relics_missed && hauntingReport.relics_missed.length > 0 && (
           <div style={{ marginBottom: '28px' }}>
-            <h4 style={{ color: '#f87171', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace', margin: '0 0 12px 0' }}>
-              👻 LURKING SPIRITS MISSED ({hauntingReport.relics_missed.length}):
+            <h4 style={{ color: '#f87171', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', margin: '0 0 12px 0', letterSpacing: '1px' }}>
+              UNRESOLVED ANOMALIES IN THE REPOSITORY ({hauntingReport.relics_missed.length}):
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' }}>
               {hauntingReport.relics_missed.map((m, idx) => (
@@ -216,14 +223,15 @@ export default function HauntingReportModal() {
               background: '#dc2626',
               color: '#fff',
               border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '1px',
               cursor: 'pointer',
               fontFamily: 'Inter, sans-serif'
             }}
           >
-            🔄 PLAY AGAIN (0 PTS)
+            RE-ENTER MANOR (RESET SCORE)
           </button>
 
           <button
@@ -231,17 +239,18 @@ export default function HauntingReportModal() {
             style={{
               flex: 1,
               padding: '12px',
-              background: '#334155',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              background: '#1e293b',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '1px',
               cursor: 'pointer',
               fontFamily: 'Inter, sans-serif'
             }}
           >
-            🏚️ NEW REPOSITORY
+            NEW REPOSITORY
           </button>
 
           <button
