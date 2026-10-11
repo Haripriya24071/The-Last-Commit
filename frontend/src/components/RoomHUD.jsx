@@ -35,7 +35,8 @@ export default function RoomHUD() {
     enableSkeletonVoice,
     toggleSkeletonVoice,
     focusedObject,
-    interactFocusedObject
+    interactFocusedObject,
+    warmth
   } = useGameStore()
 
   const [showDrawer, setShowDrawer] = useState(false)
@@ -375,6 +376,144 @@ export default function RoomHUD() {
       )}
 
       {/* ========================================================
+          CLICK TO ENTER 3D CHAMBER (FIRST-PERSON LOCK OVERLAY)
+      ======================================================== */}
+      {!isPointerLocked && !isGameOver && !showPauseMenu && (
+        <div
+          onClick={() => {
+            const canvas = document.querySelector('canvas')
+            canvas?.requestPointerLock?.()
+            AudioEngine.unlock()
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(4, 3, 6, 0.55)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            zIndex: 32
+          }}
+        >
+          <div style={{
+            background: 'rgba(12, 10, 18, 0.96)',
+            border: '2px solid rgba(239, 68, 68, 0.7)',
+            borderRadius: '10px',
+            padding: '28px 42px',
+            textAlign: 'center',
+            boxShadow: '0 0 60px rgba(0,0,0,0.95), 0 0 30px rgba(239, 68, 68, 0.35)',
+            animation: 'pulseBox 2s ease-in-out infinite alternate'
+          }}>
+            <h3 style={{
+              fontFamily: 'Cinzel Decorative, serif',
+              fontSize: '24px',
+              color: '#fca5a5',
+              margin: '0 0 10px 0',
+              letterSpacing: '2px'
+            }}>
+              CLICK TO TAKE CONTROL
+            </h3>
+            <p style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '12px',
+              color: '#cbd5e1',
+              margin: '0 0 18px 0',
+              lineHeight: 1.5
+            }}>
+              WASD: Walk • Mouse: 360° Free Look • Left Click / [E]: Inspect Code Anomaly • [ESC]: Pause
+            </p>
+            <div style={{
+              display: 'inline-block',
+              padding: '10px 28px',
+              background: '#dc2626',
+              color: '#fff',
+              borderRadius: '4px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              boxShadow: '0 0 20px rgba(220, 38, 38, 0.7)'
+            }}>
+              CLICK TO ENTER 3D CHAMBER →
+            </div>
+          </div>
+          <style>{`
+            @keyframes pulseBox {
+              0% { transform: scale(0.98); box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+              100% { transform: scale(1.02); box-shadow: 0 0 60px rgba(239, 68, 68, 0.45); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* ========================================================
+          HEARTBEAT PROXIMITY RADAR WIDGET (Bottom-Left)
+      ======================================================== */}
+      <div style={{
+        position: 'absolute',
+        bottom: '24px',
+        left: '24px',
+        background: 'rgba(12, 10, 18, 0.92)',
+        border: `1px solid ${warmth > 0.5 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: '6px',
+        padding: '10px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        boxShadow: warmth > 0.5 ? '0 0 25px rgba(239, 68, 68, 0.4)' : '0 4px 16px rgba(0,0,0,0.8)',
+        zIndex: 22,
+        pointerEvents: 'auto',
+        transition: 'all 0.3s ease'
+      }}>
+        {/* Pulsing EKG Heart Icon */}
+        <div style={{
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          background: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8',
+          boxShadow: `0 0 12px ${warmth > 0.6 ? '#ef4444' : '#38bdf8'}`,
+          animation: `pulseHeart ${Math.max(0.4, 1.3 - (warmth || 0) * 0.85)}s infinite ease-in-out`
+        }} />
+
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
+              HEARTBEAT RADAR:
+            </span>
+            <span style={{
+              fontSize: '11px',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 800,
+              color: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8'
+            }}>
+              {72 + Math.round((warmth || 0) * 88)} BPM
+            </span>
+          </div>
+          <span style={{
+            fontSize: '9px',
+            fontFamily: 'JetBrains Mono, monospace',
+            color: warmth > 0.6 ? '#fca5a5' : '#6b7280',
+            letterSpacing: '1px'
+          }}>
+            {warmth > 0.7 ? 'CRITICAL PROXIMITY • RELIC NEARBY' : warmth > 0.35 ? 'WARM • ENTITY DETECTED' : 'FAINT CHILL'}
+          </span>
+        </div>
+
+        <style>{`
+          @keyframes pulseHeart {
+            0% { transform: scale(0.85); opacity: 0.6; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(0.85); opacity: 0.6; }
+          }
+        `}</style>
+      </div>
+
+      {/* ========================================================
           3. DYNAMIC RETICLE / CROSSHAIR
       ======================================================== */}
       <div
@@ -395,18 +534,19 @@ export default function RoomHUD() {
         }}
       >
         <div style={{
-          width: focusedObject ? '38px' : '10px',
-          height: focusedObject ? '38px' : '10px',
+          width: focusedObject ? '42px' : '10px',
+          height: focusedObject ? '42px' : '10px',
           border: `2px solid ${focusedObject ? '#ef4444' : 'rgba(255, 255, 255, 0.45)'}`,
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.15s ease-out',
-          boxShadow: focusedObject ? '0 0 20px #ef4444' : 'none'
+          boxShadow: focusedObject ? '0 0 24px #ef4444' : 'none',
+          background: focusedObject ? 'rgba(239, 68, 68, 0.12)' : 'transparent'
         }}>
           {focusedObject ? (
-            <div style={{ width: '6px', height: '6px', background: '#ef4444', borderRadius: '50%' }} />
+            <div style={{ width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%' }} />
           ) : (
             <div style={{ width: '2px', height: '2px', background: '#fff', borderRadius: '50%' }} />
           )}
@@ -415,21 +555,30 @@ export default function RoomHUD() {
         {/* Hover Prompt */}
         {focusedObject && (
           <div style={{
-            marginTop: '12px',
-            background: 'rgba(12, 10, 18, 0.95)',
-            border: '1px solid #ef4444',
-            borderRadius: '4px',
-            padding: '6px 14px',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.9)',
+            marginTop: '14px',
+            background: 'rgba(12, 10, 18, 0.96)',
+            border: '2px solid #ef4444',
+            borderRadius: '6px',
+            padding: '8px 18px',
+            boxShadow: '0 6px 25px rgba(0,0,0,0.95), 0 0 20px rgba(239, 68, 68, 0.4)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '10px',
+            animation: 'promptPop 0.2s ease-out'
           }}>
-            <span style={{ color: '#fbbf24', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
-              [E / CLICK]
+            <span style={{
+              background: '#dc2626',
+              color: '#fff',
+              fontSize: '11px',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 900,
+              padding: '3px 8px',
+              borderRadius: '3px'
+            }}>
+              LEFT CLICK / E
             </span>
-            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
-              EXAMINE: {focusedObject.display_name || focusedObject.filename}
+            <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>
+              EXAMINE {focusedObject.display_name || focusedObject.filename}
             </span>
           </div>
         )}
@@ -437,7 +586,6 @@ export default function RoomHUD() {
 
       {/* ========================================================
           4. CARRIED CANDLE FOREGROUND (Exact Reference Image 9)
-             Moves and sways smoothly with mouse cursor
       ======================================================== */}
       <div style={{
         position: 'absolute',
@@ -447,8 +595,6 @@ export default function RoomHUD() {
         height: '420px',
         pointerEvents: 'none',
         zIndex: 18,
-        transform: `translate(${mousePos.x * 22}px, ${mousePos.y * 14}px)`,
-        transition: 'transform 0.08s ease-out',
         filter: lifelines > 0 ? 'drop-shadow(0 0 50px rgba(245, 158, 11, 0.45))' : 'grayscale(1) opacity(0.3)'
       }}>
         <img
@@ -485,11 +631,11 @@ export default function RoomHUD() {
         zIndex: 22,
         pointerEvents: 'auto'
       }}>
-        <span><strong style={{ color: '#fff' }}>[W, A, S, D]</strong> Navigate</span>
+        <span><strong style={{ color: '#fff' }}>[W, A, S, D]</strong> Walk</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <span style={{ color: '#38bdf8' }}>FREE CURSOR FLASHLIGHT (PAN TO EDGES TO TURN)</span>
+        <span style={{ color: '#38bdf8' }}>[MOUSE] Look 360°</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <span><strong style={{ color: '#f59e0b' }}>[E / CLICK]</strong> Inspect Relic</span>
+        <span><strong style={{ color: '#f59e0b' }}>[LEFT CLICK / E]</strong> Inspect Relic</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
         <button
           onClick={() => setShowPauseMenu(true)}

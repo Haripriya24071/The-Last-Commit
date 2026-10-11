@@ -7,7 +7,10 @@ export default function RoleSelectScreen() {
     rolePresence,
     setRole,
     setScreen,
-    repoUrl
+    repoUrl,
+    isScanning,
+    scanProgressMessage,
+    runScanRitual
   } = useGameStore()
 
   // The 3 Entities using the EXACT images from the reference PDF:
@@ -47,9 +50,11 @@ export default function RoleSelectScreen() {
     }
   ]
 
-  const handleSelectRole = (selectedId) => {
+  // Selecting a role initiates AST scanning and transitions forward to the Mansion Map
+  const handleSelectRole = async (selectedId) => {
+    if (isScanning) return
     setRole(selectedId)
-    setScreen('repo_input')
+    await runScanRitual(repoUrl, selectedId)
   }
 
   return (
@@ -75,9 +80,51 @@ export default function RoleSelectScreen() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(to bottom, rgba(4, 3, 6, 0.85) 0%, rgba(4, 3, 6, 0.92) 100%)',
+        background: 'linear-gradient(to bottom, rgba(4, 3, 6, 0.85) 0%, rgba(4, 3, 6, 0.94) 100%)',
         pointerEvents: 'none'
       }} />
+
+      {/* Top Navigation Bar: Change Repository */}
+      <div style={{
+        position: 'absolute',
+        top: '24px',
+        left: '32px',
+        right: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 20
+      }}>
+        <button
+          onClick={() => setScreen('repo_input')}
+          disabled={isScanning}
+          style={{
+            background: 'rgba(10, 8, 14, 0.7)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#cbd5e1',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '11px',
+            letterSpacing: '1px',
+            cursor: isScanning ? 'not-allowed' : 'pointer'
+          }}
+        >
+          ← CHANGE REPOSITORY
+        </button>
+
+        <span style={{
+          fontSize: '11px',
+          fontFamily: 'JetBrains Mono, monospace',
+          color: '#9ca3af',
+          background: 'rgba(0,0,0,0.6)',
+          padding: '6px 14px',
+          borderRadius: '4px',
+          border: '1px solid rgba(255,255,255,0.08)'
+        }}>
+          TARGET: <span style={{ color: '#fde68a' }}>{repoUrl === 'sample' ? 'CURSED SAMPLE MANOR' : repoUrl}</span>
+        </span>
+      </div>
 
       {/* Header Bar */}
       <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative', zIndex: 10 }}>
@@ -128,22 +175,27 @@ export default function RoleSelectScreen() {
                 border: `2px solid ${isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.12)'}`,
                 borderRadius: '12px',
                 overflow: 'hidden',
-                cursor: 'pointer',
+                cursor: isScanning ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 boxShadow: isCurrent ? `0 0 35px ${r.borderColor}` : '0 10px 40px rgba(0,0,0,0.9)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                opacity: isScanning ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.borderColor = r.borderColor
-                e.currentTarget.style.boxShadow = `0 0 35px ${r.borderColor}`
+                if (!isScanning) {
+                  e.currentTarget.style.transform = 'translateY(-4px)'
+                  e.currentTarget.style.borderColor = r.borderColor
+                  e.currentTarget.style.boxShadow = `0 0 35px ${r.borderColor}`
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.borderColor = isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.12)'
-                e.currentTarget.style.boxShadow = isCurrent ? `0 0 35px ${r.borderColor}` : '0 10px 40px rgba(0,0,0,0.9)'
+                if (!isScanning) {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.borderColor = isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.12)'
+                  e.currentTarget.style.boxShadow = isCurrent ? `0 0 35px ${r.borderColor}` : '0 10px 40px rgba(0,0,0,0.9)'
+                }
               }}
             >
               {/* Exact Character Image from PDF */}
@@ -228,9 +280,10 @@ export default function RoleSelectScreen() {
                 </div>
 
                 <button
+                  disabled={isScanning}
                   style={{
                     width: '100%',
-                    padding: '10px',
+                    padding: '12px',
                     background: isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.08)',
                     color: '#fff',
                     border: 'none',
@@ -240,16 +293,75 @@ export default function RoleSelectScreen() {
                     fontWeight: 800,
                     letterSpacing: '1px',
                     textTransform: 'uppercase',
-                    cursor: 'pointer'
+                    cursor: isScanning ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {isCurrent ? 'ACTIVE ENTITY' : 'CHOOSE SPECTRE'}
+                  {isScanning ? 'MANIFESTING ESTATE...' : `MANIFEST & ENTER ESTATE →`}
                 </button>
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Scanning Ritual Animation Overlay */}
+      {isScanning && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(4, 3, 6, 0.96)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 100
+        }}>
+          <h3 style={{
+            fontFamily: 'Cinzel Decorative, serif',
+            fontSize: '26px',
+            color: '#ef4444',
+            margin: '0 0 12px 0',
+            letterSpacing: '2px',
+            textShadow: '0 0 20px rgba(239, 68, 68, 0.6)'
+          }}>
+            RECONSTRUCTING ESTATE FROM AST...
+          </h3>
+          <p style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '13px',
+            color: '#fca5a5',
+            margin: '0 0 24px 0'
+          }}>
+            {scanProgressMessage || 'Binding AST detectors to Victorian chambers...'}
+          </p>
+          <div style={{
+            width: '280px',
+            height: '4px',
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              width: '50%',
+              background: '#ef4444',
+              borderRadius: '2px',
+              animation: 'scanProgress 1.4s ease-in-out infinite alternate'
+            }} />
+          </div>
+          <style>{`
+            @keyframes scanProgress {
+              0% { left: 0%; width: 25%; }
+              50% { width: 60%; }
+              100% { left: 75%; width: 25%; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   )
 }

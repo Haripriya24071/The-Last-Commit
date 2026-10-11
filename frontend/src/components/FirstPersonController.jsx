@@ -2,49 +2,80 @@ import React, { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGameStore } from '../store/gameStore'
+import { AudioEngine } from './AudioEngine'
 
 export default function FirstPersonController() {
   const { camera, scene, gl } = useThree()
-  const updateWarmth = useGameStore((state) => state.warmth)
-  const setFocusedObject = useGameStore((state) => state.setFocusedObject)
-  const interactFocusedObject = useGameStore((state) => state.interactFocusedObject)
   const isGameOver = useGameStore((state) => state.isGameOver)
   const lifelines = useGameStore((state) => state.lifelines)
+  const setFocusedObject = useGameStore((state) => state.setFocusedObject)
+  const interactFocusedObject = useGameStore((state) => state.interactFocusedObject)
+  const setPointerLocked = useGameStore((state) => state.setPointerLocked)
 
-  // 180° Free Cursor Flashlight Look State (Inspired by tech lead engine but with candle physics)
-  const pn = useRef({ x: 0, y: 0 })
-  const angles = useRef({ yaw: 0, pitch: 0, targetYaw: 0, targetPitch: 0 })
+  // Camera orientation angles
+  const yaw = useRef(0)
+  const pitch = useRef(0)
+  const isLocked = useRef(false)
+
+  // WASD movement state
+  const moveState = useRef({ forward: false, backward: false, left: false, right: false })
+  const velocity = useRef(new THREE.Vector3())
+  const direction = useRef(new THREE.Vector3())
+  const lastFootstepTime = useRef(0)
+
+  // Lights & Raycaster
   const spotlightRef = useRef()
   const candleLightRef = useRef()
   const raycaster = useRef(new THREE.Raycaster())
   const lastWarmthCheck = useRef(0)
-
-  // WASD movement within Victorian chamber
-  const moveState = useRef({ forward: false, backward: false, left: false, right: false })
-  const velocity = useRef(new THREE.Vector3())
-  const direction = useRef(new THREE.Vector3())
+  const lastHeartbeatAudio = useRef(0)
 
   useEffect(() => {
-    // Ensure mouse cursor is visible and free
-    document.body.style.cursor = 'default'
-    if (document.pointerLockElement) {
-      document.exitPointerLock?.()
+    // 1. Pointer Lock Event Handlers
+    const onPointerLockChange = () => {
+      const locked = document.pointerLockElement === gl.domElement
+      isLocked.current = locked
+      setPointerLocked(locked)
+      if (locked) {
+        AudioEngine.unlock()
+      }
     }
 
-    // Free Cursor flashlight aiming + 180° screen-edge turning
-    const handlePointerMove = (e) => {
-      const dx = (e.clientX / window.innerWidth - 0.5) * 2
-      const dy = (e.clientY / window.innerHeight - 0.5) * 2
-      const edgeThreshold = (v, k) => Math.sign(v) * Math.max(0, Math.abs(v) - k) / (1 - k)
-
-      pn.current.x = dx
-      pn.current.y = -dy
-
-      // Smooth 180° edge panning (turns camera when mouse pushes near borders)
-      angles.current.targetYaw = -(edgeThreshold(dx, 0.42) * 1.35 + dx * 0.12)
-      angles.current.targetPitch = -(edgeThreshold(dy, 0.52) * 0.45 + dy * 0.05)
+    const onPointerLockError = () => {
+      isLocked.current = false
+      setPointerLocked(false)
     }
 
+    document.addEventListener('pointerlockchange', onPointerLockChange)
+    document.addEventListener('pointerlockerror', onPointerLockError)
+
+    // 2. Mouse Look Handler (Standard FPS 360° Camera Look)
+    const handleMouseMove = (e) => {
+      if (!isLocked.current) return
+
+      const sensitivity = 0.0022
+      yaw.current -= e.movementX * sensitivity
+      pitch.current -= e.movementY * sensitivity
+
+      // Clamp pitch between -85° and +85°
+      pitch.current = Math.max(-1.48, Math.min(1.48, pitch.current))
+    }
+
+    // 3. Left Click / E to Interact with Aimed Object
+    const handleMouseDown = (e) => {
+      // If not locked, request lock on click
+      if (!isLocked.current && !isGameOver) {
+        gl.domElement.requestPointerLock?.()
+        return
+      }
+
+      // If locked, Left Mouse Button interacts with focused object
+      if (e.button === 0 && !isGameOver) {
+        interactFocusedObject()
+      }
+    }
+
+    // 4. Keyboard Navigation (WASD + E/Space)
     const handleKeyDown = (e) => {
       switch (e.code) {
         case 'KeyW':
@@ -91,34 +122,32 @@ export default function FirstPersonController() {
       }
     }
 
-    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousedown', handleMouseDown)
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerlockchange', onPointerLockChange)
+      document.removeEventListener('pointerlockerror', onPointerLockError)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mousedown', handleMouseDown)
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
+      if (document.pointerLockElement) {
+        document.exitPointerLock?.()
+      }
     }
-  }, [interactFocusedObject, isGameOver])
+  }, [gl.domElement, interactFocusedObject, isGameOver, setPointerLocked])
 
   useFrame((state, delta) => {
     const time = state.clock.elapsedTime
     const dt = Math.min(0.05, delta)
 
-    // 1. Smooth 180° camera rotation interpolation
-    angles.current.yaw += (angles.current.targetYaw - angles.current.yaw) * Math.min(1, dt * 5.0)
-    angles.current.pitch += (angles.current.targetPitch - angles.current.pitch) * Math.min(1, dt * 5.0)
+    // 1. Apply FPS Camera Rotation
+    camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ')
 
-    // Subtle breathing camera bobbing
-    camera.rotation.set(
-      angles.current.pitch + Math.sin(time * 1.2) * 0.006,
-      angles.current.yaw + Math.cos(time * 0.8) * 0.005,
-      Math.sin(time * 0.9) * 0.004,
-      'YXZ'
-    )
-
-    // 2. WASD Movement in the Victorian Room
+    // 2. WASD Movement Dynamics
     velocity.current.x -= velocity.current.x * 10.0 * dt
     velocity.current.z -= velocity.current.z * 10.0 * dt
 
@@ -126,7 +155,9 @@ export default function FirstPersonController() {
     direction.current.x = Number(moveState.current.right) - Number(moveState.current.left)
     direction.current.normalize()
 
-    const moveSpeed = 28.0
+    const moveSpeed = 30.0
+    const isMoving = moveState.current.forward || moveState.current.backward || moveState.current.left || moveState.current.right
+
     if (moveState.current.forward || moveState.current.backward) {
       velocity.current.z -= direction.current.z * moveSpeed * dt
     }
@@ -134,43 +165,50 @@ export default function FirstPersonController() {
       velocity.current.x -= direction.current.x * moveSpeed * dt
     }
 
-    // Move forward/back along camera yaw orientation
-    const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, camera.rotation.y, 0))
-    const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, camera.rotation.y, 0))
+    // Direction vector relative to camera yaw
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, yaw.current, 0))
+    const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, yaw.current, 0))
 
     camera.position.addScaledVector(forward, -velocity.current.z * dt)
     camera.position.addScaledVector(right, -velocity.current.x * dt)
 
-    // Clamp inside Victorian room boundaries (-5.6m to +5.6m)
+    // Clamp inside room boundaries (-5.6m to +5.6m)
     camera.position.x = THREE.MathUtils.clamp(camera.position.x, -5.6, 5.6)
     camera.position.z = THREE.MathUtils.clamp(camera.position.z, -5.6, 5.6)
-    camera.position.y = 1.6 // Eye height
 
-    // 3. Dynamic Carried Candle Light (Follows mouse cursor in real-time 3D space!)
+    // Walking Head-Bob & Footstep Audio
+    if (isMoving) {
+      const bob = Math.sin(time * 9.5) * 0.04
+      camera.position.y = 1.6 + bob
+
+      // Trigger footstep sound at bottom of bob
+      if (time - lastFootstepTime.current > 0.38) {
+        AudioEngine.playFootstep()
+        lastFootstepTime.current = time
+      }
+    } else {
+      camera.position.y = 1.6 + Math.sin(time * 1.5) * 0.01 // Subtle breathing
+    }
+
+    // 3. Dynamic Carried Candle Light
     if (spotlightRef.current && candleLightRef.current) {
-      // Light origin right at camera position
       spotlightRef.current.position.copy(camera.position)
       candleLightRef.current.position.copy(camera.position)
 
-      // Unproject mouse direction to point candlelight beam directly at cursor
-      const mouseRay = new THREE.Vector3(pn.current.x, pn.current.y, 0.5)
-        .unproject(camera)
-        .sub(camera.position)
-        .normalize()
-
-      spotlightRef.current.target.position.copy(camera.position).addScaledVector(mouseRay, 10.0)
+      // Aim spotlight straight ahead where player is looking
+      const lookDir = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation)
+      spotlightRef.current.target.position.copy(camera.position).addScaledVector(lookDir, 10.0)
       spotlightRef.current.target.updateMatrixWorld()
 
-      // Flickering candle flame intensity (dimmer as lifelines die)
-      const candlePowerFactor = Math.max(0.4, lifelines / 4)
-      const flicker = Math.sin(time * 16) * 0.15 + Math.cos(time * 28) * 0.08
-      spotlightRef.current.intensity = (2.2 + flicker) * candlePowerFactor
-      candleLightRef.current.intensity = (1.2 + flicker * 0.5) * candlePowerFactor
+      // Flickering candle flame intensity
+      const candleFactor = Math.max(0.4, lifelines / 4)
+      const flicker = Math.sin(time * 14) * 0.2 + Math.cos(time * 24) * 0.1
+      spotlightRef.current.intensity = (2.6 + flicker) * candleFactor
+      candleLightRef.current.intensity = (1.4 + flicker * 0.5) * candleFactor
     }
 
-    // 4. Cursor Raycasting for Interactive Anomaly Inspection
-    const mouseNorm = new THREE.Vector2(pn.current.x, pn.current.y)
-    raycaster.current.setFromCamera(mouseNorm, camera)
+    // 4. Center Crosshair Raycasting for Anomaly Inspection
+    raycaster.current.setFromCamera(new THREE.Vector2(0, 0), camera)
     raycaster.current.far = 7.5
 
     const interactives = []
@@ -192,18 +230,34 @@ export default function FirstPersonController() {
     } else {
       setFocusedObject(null)
     }
+
+    // 5. Heartbeat Radar Proximity Sync (Every 450ms)
+    if (time - lastWarmthCheck.current > 0.45) {
+      lastWarmthCheck.current = time
+      useGameStore.getState().updateWarmth(camera.position.x, camera.position.y, camera.position.z)
+    }
+
+    // 6. Audio Heartbeat Pulse based on Warmth
+    const warmth = useGameStore.getState().warmth || 0.0
+    if (warmth > 0.08) {
+      const beatInterval = Math.max(0.45, 1.3 - warmth * 0.85)
+      if (time - lastHeartbeatAudio.current > beatInterval) {
+        lastHeartbeatAudio.current = time
+        AudioEngine.playHeartbeat(warmth)
+      }
+    }
   })
 
   return (
     <>
-      {/* Carried Candle Spotlight Aimed by Cursor */}
+      {/* Handheld Candle Flashlight */}
       <spotLight
         ref={spotlightRef}
         color="#fbbf24"
-        intensity={2.4}
-        distance={16.0}
-        angle={Math.PI / 4.2}
-        penumbra={0.7}
+        intensity={2.8}
+        distance={18.0}
+        angle={Math.PI / 4.0}
+        penumbra={0.65}
         decay={1.8}
         castShadow
       />
@@ -212,9 +266,9 @@ export default function FirstPersonController() {
       <pointLight
         ref={candleLightRef}
         color="#fef08a"
-        intensity={1.2}
-        distance={7.0}
-        decay={2.2}
+        intensity={1.4}
+        distance={8.0}
+        decay={2.0}
       />
     </>
   )

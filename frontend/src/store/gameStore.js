@@ -173,9 +173,15 @@ export const useGameStore = create((set, get) => ({
   }),
 
   // Execute scan with animated spooky ritual messages
-  runScanRitual: async (repoInput) => {
+  runScanRitual: async (repoInput, roleOverride) => {
     const targetUrl = repoInput || get().repoUrl || 'sample'
-    set({ isScanning: true, scanProgressMessage: 'Summoning git shallow clone...' })
+    const targetRole = roleOverride || get().role || 'ghost'
+    set({
+      isScanning: true,
+      scanProgressMessage: 'Summoning git shallow clone...',
+      role: targetRole,
+      repoUrl: targetUrl
+    })
 
     // Progressive spooky status updates
     const timer1 = setTimeout(() => {
@@ -194,7 +200,7 @@ export const useGameStore = create((set, get) => ({
       const res = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repo_url: targetUrl, role: get().role })
+        body: JSON.stringify({ repo_url: targetUrl, role: targetRole })
       })
       const data = await res.json()
 
@@ -204,13 +210,14 @@ export const useGameStore = create((set, get) => ({
 
       set({
         scanId: data.scan_id,
-        role: data.role,
+        role: data.role || targetRole,
         mansionMap: data.rooms,
         rolePresence: data.role_presence || { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
         lifelines: data.lifelines_left ?? 4,
         lanternVisitsLeft: data.lantern_visits_left ?? 4,
         isScanning: false,
-        currentScreen: 'role_select'
+        currentScreen: 'map',
+        currentView: 'map'
       })
       return data
     } catch (err) {
