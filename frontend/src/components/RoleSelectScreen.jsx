@@ -11,246 +11,251 @@ export default function RoleSelectScreen() {
     repoUrl
   } = useGameStore()
 
+  // The 3 Entities directly based on User's Visual Reference PDF:
+  // - Skeleton: Root-tendon creature in stone arch (Image 1)
+  // - Reaper: Black mist wraith with clawed hands (Image 6)
+  // - Ghost: Veiled spectral figure descending staircase (Image 7)
   const rolesConfig = [
     {
       id: 'ghost',
-      title: 'THE GHOST',
-      icon: '👻',
-      subtitle: 'Spirit of Abandoned Logic',
-      description: 'Hunts dead functions, bare exceptions, mutable defaults, unreachable code, and unused imports.',
-      noneExplanation: 'No dead functions, bare exceptions, or unused imports detected in this repository.',
+      title: 'THE VEILED GHOST',
+      archetype: 'Spectral Lady of the Staircase',
+      referenceTag: 'Reference Image 7',
+      description: 'Ethereal veiled phantom descending the dark manor staircase. Senses abandoned logic, dead branches, bare exceptions, and forgotten functions.',
       themeColor: '#38bdf8',
-      bgGlow: 'rgba(56, 189, 248, 0.12)',
-      border: 'rgba(56, 189, 248, 0.4)',
-      targets: ['Dead Code & Vulture AST', 'Bare Exceptions (`except:`)', 'Mutable Default Args', 'Unreachable Branches']
+      visualIcon: '👻',
+      auraColor: 'rgba(56, 189, 248, 0.25)',
+      borderColor: '#38bdf8',
+      scent: 'Smells: Dead Code, Empty Catches, Unreachable Logic'
     },
     {
       id: 'reaper',
-      title: 'THE REAPER',
-      icon: '💀',
-      subtitle: 'Executioner of Breached Secrets',
-      description: 'Hunts exposed API keys, committed .env files, dangerous eval(), shell=True injections, and SQL concatenation.',
-      noneExplanation: 'No exposed API tokens, committed .env files, or unsafe execution patterns detected.',
+      title: 'THE SHADOW REAPER',
+      archetype: 'Clawed Wraith of the Mist',
+      referenceTag: 'Reference Image 6',
+      description: 'Towering entity in tattered black cowls with reaching clawed talons and billowing smoke. Senses committed secrets, leaked API keys, and injection vulnerabilities.',
       themeColor: '#ef4444',
-      bgGlow: 'rgba(239, 68, 68, 0.15)',
-      border: 'rgba(239, 68, 68, 0.4)',
-      targets: ['Committed Secrets & .env', 'Hardcoded API Keys', 'eval() & shell=True Injections', 'SQL String Concat']
+      visualIcon: '💀',
+      auraColor: 'rgba(239, 68, 68, 0.3)',
+      borderColor: '#ef4444',
+      scent: 'Smells: Exposed .env Secrets, Hardcoded Keys, Eval Injections'
     },
     {
       id: 'skeleton',
-      title: 'THE SKELETON',
-      icon: '🦴',
-      subtitle: 'Architect of Rotting Complexity',
-      description: 'Hunts forgotten TODO/FIXME comments, oversized source files, cyclomatic complexity (>10), and missing tests.',
-      noneExplanation: 'No high-complexity functions or unresolved TODO/FIXME comments detected.',
+      title: 'THE ROOT SKELETON',
+      archetype: 'Emaciated Tendon Beast',
+      referenceTag: 'Reference Image 1',
+      description: 'Slender, horrifying creature woven from ancient roots, bare bone, and dark sinew standing in the stone arch. Senses rotting architectural complexity and massive bloated files.',
       themeColor: '#f59e0b',
-      bgGlow: 'rgba(245, 158, 11, 0.12)',
-      border: 'rgba(245, 158, 11, 0.4)',
-      targets: ['TODO & FIXME Comments', 'High Complexity (>10)', 'Oversized Source Files', 'Weak Git Commits']
+      visualIcon: '🦴',
+      auraColor: 'rgba(245, 158, 11, 0.25)',
+      borderColor: '#f59e0b',
+      scent: 'Smells: Cyclomatic Debt, Bloated Files, Unresolved TODOs'
     }
   ]
 
-  const handleSelectRole = async (selectedId) => {
+  const handleSelectRole = (selectedId) => {
     setRole(selectedId)
-    await fetchMansionMap(repoUrl || 'sample')
-    setScreen('map')
+    // Moves to Screen 4: The Broken Frame Repo Input on the Staircase (Reference Image 14)
+    setScreen('repo_input')
   }
 
   return (
     <div style={{
       width: '100vw',
       height: '100vh',
-      background: 'radial-gradient(circle at 50% 50%, #171026 0%, #050308 100%)',
+      background: 'radial-gradient(circle at 50% 25%, #141b24 0%, #080a10 50%, #020204 100%)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       color: '#e5e7eb',
       fontFamily: 'Inter, sans-serif',
-      padding: '24px',
+      padding: '24px 36px',
       boxSizing: 'border-box',
-      overflowY: 'auto'
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-        <span style={{ fontSize: '36px' }}>👑🕯️</span>
+      {/* Background Gothic Gate Silhouette (Reference Image 17) */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `
+          linear-gradient(to bottom, rgba(5, 5, 8, 0.6), rgba(3, 2, 6, 0.95)),
+          radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 70%)
+        `,
+        pointerEvents: 'none'
+      }} />
+
+      {/* Estate Gates Header Bar */}
+      <div style={{ textAlign: 'center', marginBottom: '28px', position: 'relative', zIndex: 10 }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 14px',
+          background: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderRadius: '9999px',
+          fontSize: '11px',
+          fontFamily: 'JetBrains Mono, monospace',
+          color: '#fca5a5',
+          marginBottom: '10px'
+        }}>
+          <span>🏰</span>
+          <span>ESTATE GATES • CHOOSE YOUR MANIFESTATION</span>
+        </div>
+
         <h2 style={{
           fontFamily: 'Cinzel Decorative, serif',
-          fontSize: '28px',
-          color: '#ef4444',
-          margin: '8px 0 4px 0',
+          fontSize: '32px',
+          fontWeight: 900,
+          color: '#f87171',
+          margin: 0,
           letterSpacing: '2px',
-          textShadow: '0 0 18px rgba(239, 68, 68, 0.5)'
+          textShadow: '0 0 25px rgba(239, 68, 68, 0.5)'
         }}>
-          SELECT YOUR INVESTIGATOR ROLE
+          WHICH SPECTRE WALKS WITH YOU?
         </h2>
-        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
-          Presence indicators reveal which entities have manifested in this codebase.
+        <p style={{ color: '#9ca3af', fontSize: '13px', margin: '6px 0 0 0' }}>
+          Each entity is tuned to detect different paranormal code flaws hiding inside the mansion.
         </p>
       </div>
 
-      {/* 3 Role Cards Grid */}
+      {/* The 3 Character Persona Cards (Matching Visual References 1, 6, 7) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         gap: '24px',
-        maxWidth: '1100px',
-        width: '100%'
+        maxWidth: '1180px',
+        width: '100%',
+        position: 'relative',
+        zIndex: 10
       }}>
         {rolesConfig.map((r) => {
-          const presence = rolePresence[r.id] || 'faint'
-          const isSelected = role === r.id
-          const isNone = presence === 'none'
+          const presence = rolePresence[r.id] || 'strong'
+          const isCurrent = role === r.id
 
           return (
             <div
               key={r.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`Select Role ${r.title}: ${r.subtitle}. Presence is ${presence}.`}
               onClick={() => handleSelectRole(r.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handleSelectRole(r.id)
-                }
-              }}
               style={{
-                background: isSelected ? r.bgGlow : 'rgba(18, 14, 28, 0.9)',
-                border: `2px solid ${isSelected ? r.themeColor : isNone ? 'rgba(255,255,255,0.06)' : r.border}`,
+                background: 'rgba(16, 14, 26, 0.94)',
+                border: `2px solid ${isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.1)'}`,
                 borderRadius: '16px',
                 padding: '28px',
+                cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                cursor: 'pointer',
-                opacity: isNone ? 0.6 : 1.0,
-                boxShadow: isSelected ? `0 0 30px ${r.bgGlow}` : '0 8px 24px rgba(0,0,0,0.7)',
-                transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s, opacity 0.2s',
-                backdropFilter: 'blur(12px)',
+                boxShadow: isCurrent ? `0 0 40px ${r.auraColor}` : '0 10px 30px rgba(0,0,0,0.8)',
+                transition: 'all 0.2s ease',
                 position: 'relative',
-                outline: 'none'
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.borderColor = r.borderColor
+                e.currentTarget.style.boxShadow = `0 0 35px ${r.auraColor}`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.borderColor = isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.1)'
+                e.currentTarget.style.boxShadow = isCurrent ? `0 0 40px ${r.auraColor}` : '0 10px 30px rgba(0,0,0,0.8)'
               }}
             >
-
+              {/* Top Persona Header */}
               <div>
-                {/* Icon & Presence Tag */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '42px', filter: `drop-shadow(0 0 12px ${r.themeColor})` }}>
-                    {r.icon}
-                  </span>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '12px',
+                    background: r.auraColor,
+                    border: `1px solid ${r.borderColor}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '34px',
+                    boxShadow: `0 0 20px ${r.auraColor}`
+                  }}>
+                    {r.visualIcon}
+                  </div>
 
                   <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '4px 10px',
-                    borderRadius: '9999px',
+                    fontSize: '10px',
                     fontFamily: 'JetBrains Mono, monospace',
-                    background: presence === 'strong' ? '#065f46' : presence === 'faint' ? '#854d0e' : '#374151',
-                    color: presence === 'strong' ? '#6ee7b7' : presence === 'faint' ? '#fde68a' : '#9ca3af',
-                    border: `1px solid ${presence === 'strong' ? '#10b981' : presence === 'faint' ? '#f59e0b' : '#6b7280'}`
+                    fontWeight: 800,
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    background: presence === 'strong' ? '#065f46' : '#854d0e',
+                    color: '#fff'
                   }}>
-                    {presence === 'strong' ? '🔥 STRONG PRESENCE' : presence === 'faint' ? '🕯️ FAINT PRESENCE' : '🌫️ NO PRESENCE'}
+                    {presence.toUpperCase()} PRESENCE
                   </span>
                 </div>
+
+                <span style={{
+                  fontSize: '10px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  color: r.themeColor,
+                  fontWeight: 800,
+                  letterSpacing: '1px'
+                }}>
+                  {r.archetype.toUpperCase()}
+                </span>
 
                 <h3 style={{
                   fontFamily: 'Cinzel Decorative, serif',
-                  fontSize: '20px',
-                  color: r.themeColor,
-                  margin: '0 0 4px 0',
-                  letterSpacing: '1px'
+                  fontSize: '22px',
+                  color: '#fff',
+                  margin: '4px 0 10px 0'
                 }}>
                   {r.title}
                 </h3>
-                <h4 style={{
-                  fontSize: '12px',
-                  color: '#9ca3af',
-                  margin: '0 0 12px 0',
-                  fontFamily: 'JetBrains Mono, monospace'
-                }}>
-                  {r.subtitle}
-                </h4>
 
-                <p style={{ color: '#cbd5e1', fontSize: '13px', lineHeight: 1.5, margin: '0 0 14px 0' }}>
+                <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: 1.5, margin: '0 0 16px 0' }}>
                   {r.description}
                 </p>
-
-                {/* Single line explanation when presence is NONE */}
-                {isNone && (
-                  <div style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px dashed rgba(239, 68, 68, 0.3)',
-                    borderRadius: '6px',
-                    padding: '8px 10px',
-                    marginBottom: '12px',
-                    fontSize: '11px',
-                    color: '#fca5a5',
-                    fontStyle: 'italic'
-                  }}>
-                    {r.noneExplanation}
-                  </div>
-                )}
-
-                {/* Hunt Targets */}
-                <div style={{
-                  background: 'rgba(9, 6, 15, 0.7)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  border: '1px solid rgba(255,255,255,0.06)'
-                }}>
-                  <div style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, marginBottom: '6px' }}>
-                    HAUNTED ARTIFACTS:
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '16px', color: '#94a3b8', fontSize: '11px', lineHeight: 1.5 }}>
-                    {r.targets.map((t, idx) => (
-                      <li key={idx}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
               </div>
 
-              {/* Select Button */}
-              <button
-                style={{
-                  marginTop: '20px',
-                  width: '100%',
-                  padding: '12px',
-                  background: isSelected ? r.themeColor : isNone ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)',
-                  color: isSelected ? '#000' : isNone ? '#6b7280' : '#fff',
-                  border: 'none',
+              {/* Scent & Selection Action */}
+              <div>
+                <div style={{
+                  padding: '8px 12px',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
+                  fontSize: '11px',
                   fontFamily: 'JetBrains Mono, monospace',
-                  letterSpacing: '1px'
-                }}
-              >
-                {isSelected ? '✓ CHOSEN ROLE — ENTER MANSION' : isNone ? 'ENTER ANYWAY →' : 'SELECT THIS ROLE →'}
-              </button>
+                  color: '#cbd5e1',
+                  marginBottom: '18px'
+                }}>
+                  {r.scent}
+                </div>
+
+                <button
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.08)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: isCurrent ? `0 0 20px ${r.auraColor}` : 'none'
+                  }}
+                >
+                  {isCurrent ? 'SELECTED PERSONA' : 'CHOOSE THIS SPECTRE'}
+                </button>
+              </div>
             </div>
           )
         })}
-      </div>
-
-      {/* Back to Repo Selection */}
-      <div style={{ marginTop: '28px' }}>
-        <button
-          onClick={() => setScreen('repo_input')}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)',
-            color: '#9ca3af',
-            padding: '8px 18px',
-            borderRadius: '8px',
-            fontSize: '11px',
-            cursor: 'pointer',
-            fontFamily: 'JetBrains Mono, monospace'
-          }}
-        >
-          ← CHANGE REPOSITORY
-        </button>
       </div>
     </div>
   )
