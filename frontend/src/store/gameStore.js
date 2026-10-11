@@ -353,6 +353,7 @@ export const useGameStore = create((set, get) => ({
           foundRelics: [...state.foundRelics, result.relic],
           activeRelicModal: result.relic
         }))
+        AudioEngine.playRelicFound()
         AudioEngine.speakVoiceLine('relic', role, get().setSubtitle, enableSkeletonVoice)
       } else {
         const availableScares = SCARE_TYPES.filter(s => s !== lastScareType)
@@ -364,6 +365,7 @@ export const useGameStore = create((set, get) => ({
           activeScare: nextScare,
           lastScareType: nextScare
         })
+        AudioEngine.playJumpScare(result.jump_scare_type || nextScare)
         if (result.game_over) {
           AudioEngine.speakVoiceLine('game_over', role, get().setSubtitle, enableSkeletonVoice)
         } else {

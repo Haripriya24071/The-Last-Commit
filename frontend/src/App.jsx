@@ -47,16 +47,16 @@ export default function App() {
   }, [currentScreen])
 
   // 3. Dynamic Fog Calculation (Thicker as candles die, thinner as relics are found)
-  // Low candles (1) = thicker fog (near 1.8, far 9)
-  // 4 candles + relics = clear fog (near 3.5, far 16)
-  const candleFogFactor = Math.max(0.5, lifelines / 4)
-  const relicClarity = foundRelics.length * 0.4
-  const fogNear = Math.max(1.5, 2.0 * candleFogFactor + relicClarity * 0.2)
-  const fogFar = Math.max(7.5, 10.0 * candleFogFactor + relicClarity * 1.2)
+  // 3. Dynamic Fog Calculation - High-fidelity depth preserving Gothic walls and architecture
+  // Ensures walls at 7m-11m and floor flagstones are clearly visible rather than drowned in pitch black
+  const candleFogFactor = Math.max(0.6, lifelines / 4)
+  const relicClarity = foundRelics.length * 0.5
+  const fogNear = Math.max(5.0, 6.0 * candleFogFactor + relicClarity * 0.2)
+  const fogFar = Math.max(22.0, 26.0 * candleFogFactor + relicClarity * 1.5)
 
   const objects = roomData?.objects || []
   const themeColor = roomData?.theme_color || '#38bdf8'
-  const ambientIntensity = (lowQuality ? 0.45 : 0.3) * (brightness || 1.2)
+  const ambientIntensity = (lowQuality ? 0.7 : 0.58) * (brightness || 1.2)
 
   return (
     <div style={{
@@ -170,7 +170,7 @@ export default function App() {
             gl={{ antialias: !lowQuality, powerPreference: 'high-performance' }}
           >
             {/* Dynamic Volumetric Horror Fog */}
-            <fog attach="fog" args={['#050508', fogNear, fogFar]} />
+            <fog attach="fog" args={['#090710', fogNear, fogFar]} />
 
             {/* Adjustable Ambient Dark Light */}
             <ambientLight intensity={ambientIntensity} />

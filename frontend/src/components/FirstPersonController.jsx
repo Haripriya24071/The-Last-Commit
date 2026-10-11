@@ -63,15 +63,17 @@ export default function FirstPersonController() {
 
     // 3. Left Click / E to Interact with Aimed Object
     const handleMouseDown = (e) => {
-      // If not locked, request lock on click
-      if (!isLocked.current && !isGameOver) {
-        gl.domElement.requestPointerLock?.()
-        return
+      if (isGameOver) return
+      // If user clicked left mouse button and has an aimed/focused object, interact immediately
+      if (e.button === 0) {
+        const curFocused = useGameStore.getState().focusedObject
+        if (curFocused) {
+          interactFocusedObject()
+        }
       }
-
-      // If locked, Left Mouse Button interacts with focused object
-      if (e.button === 0 && !isGameOver) {
-        interactFocusedObject()
+      // Ensure pointer lock is maintained
+      if (!isLocked.current) {
+        gl.domElement.requestPointerLock?.()
       }
     }
 
@@ -207,9 +209,9 @@ export default function FirstPersonController() {
       candleLightRef.current.intensity = (1.4 + flicker * 0.5) * candleFactor
     }
 
-    // 4. Center Crosshair Raycasting for Anomaly Inspection
+    // 4. Center Crosshair Raycasting & Intelligent Proximity Aiming
     raycaster.current.setFromCamera(new THREE.Vector2(0, 0), camera)
-    raycaster.current.far = 7.5
+    raycaster.current.far = 8.5
 
     const interactives = []
     scene.traverse((obj) => {
@@ -217,19 +219,39 @@ export default function FirstPersonController() {
     })
 
     const hits = raycaster.current.intersectObjects(interactives, true)
+    let detectedObj = null
+
     if (hits.length > 0) {
       let top = hits[0].object
       while (top && !top.userData?.objData && top.parent) {
         top = top.parent
       }
       if (top?.userData?.objData) {
-        setFocusedObject(top.userData.objData)
-      } else {
-        setFocusedObject(null)
+        detectedObj = top.userData.objData
       }
-    } else {
-      setFocusedObject(null)
     }
+
+    // Proximity fallback: If no direct raycast hit, check if player is close (<= 3.0m) and looking towards an object
+    if (!detectedObj && interactives.length > 0) {
+      const camPos = camera.position
+      const camDir = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation).normalize()
+      let closestDist = 3.0
+      for (const item of interactives) {
+        const itemPos = new THREE.Vector3()
+        item.getWorldPosition(itemPos)
+        const dist = camPos.distanceTo(itemPos)
+        if (dist <= closestDist) {
+          const toItem = itemPos.clone().sub(camPos).normalize()
+          const dot = camDir.dot(toItem)
+          if (dot > 0.65) {
+            closestDist = dist
+            detectedObj = item.userData?.objData
+          }
+        }
+      }
+    }
+
+    setFocusedObject(detectedObj)
 
     // 5. Heartbeat Radar Proximity Sync (Every 450ms)
     if (time - lastWarmthCheck.current > 0.45) {

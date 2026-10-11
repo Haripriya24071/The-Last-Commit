@@ -6,6 +6,8 @@ import { useGameStore } from '../store/gameStore'
 export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
   const torchLight1 = useRef()
   const torchLight2 = useRef()
+  const torchLight3 = useRef()
+  const torchLight4 = useRef()
   const dustParticlesRef = useRef()
   const lowQuality = useGameStore((state) => state.lowQuality)
   const currentRoom = useGameStore((state) => state.currentRoom)
@@ -40,10 +42,16 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
   useFrame((state, delta) => {
     const time = state.clock.elapsedTime
     if (torchLight1.current) {
-      torchLight1.current.intensity = 1.8 + Math.sin(time * 12) * 0.35 + Math.cos(time * 26) * 0.15
+      torchLight1.current.intensity = 2.6 + Math.sin(time * 12) * 0.45 + Math.cos(time * 26) * 0.2
     }
     if (torchLight2.current) {
-      torchLight2.current.intensity = 1.8 + Math.cos(time * 11) * 0.35 + Math.sin(time * 21) * 0.15
+      torchLight2.current.intensity = 2.6 + Math.cos(time * 11) * 0.45 + Math.sin(time * 21) * 0.2
+    }
+    if (torchLight3.current) {
+      torchLight3.current.intensity = 2.4 + Math.sin(time * 13 + 1.2) * 0.4 + Math.cos(time * 19) * 0.2
+    }
+    if (torchLight4.current) {
+      torchLight4.current.intensity = 2.4 + Math.cos(time * 10 + 2.1) * 0.4 + Math.sin(time * 23) * 0.2
     }
 
     // Drifting dust motes
@@ -180,13 +188,17 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
       <group position={[-6.7, 2.7, -1.5]}>
         <mesh>
           <boxGeometry args={[0.15, 0.5, 0.15]} />
-          <meshStandardMaterial color="#451a03" />
+          <meshStandardMaterial color="#2d1d12" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.32, 0]}>
+          <coneGeometry args={[0.08, 0.22, 6]} />
+          <meshBasicMaterial color="#ff7700" />
         </mesh>
         <pointLight
           ref={torchLight1}
           color="#f97316"
-          intensity={2.0}
-          distance={10}
+          intensity={2.8}
+          distance={15}
           decay={2}
           castShadow={!lowQuality}
         />
@@ -196,15 +208,57 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
       <group position={[6.7, 2.7, 1.5]}>
         <mesh>
           <boxGeometry args={[0.15, 0.5, 0.15]} />
-          <meshStandardMaterial color="#451a03" />
+          <meshStandardMaterial color="#2d1d12" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.32, 0]}>
+          <coneGeometry args={[0.08, 0.22, 6]} />
+          <meshBasicMaterial color="#ff7700" />
         </mesh>
         <pointLight
           ref={torchLight2}
           color="#f97316"
-          intensity={2.0}
-          distance={10}
+          intensity={2.8}
+          distance={15}
           decay={2}
           castShadow={!lowQuality}
+        />
+      </group>
+
+      {/* North Torch (Left of Door) */}
+      <group position={[-3.8, 2.7, -6.7]}>
+        <mesh>
+          <boxGeometry args={[0.15, 0.5, 0.15]} />
+          <meshStandardMaterial color="#2d1d12" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.32, 0]}>
+          <coneGeometry args={[0.08, 0.22, 6]} />
+          <meshBasicMaterial color="#ff7700" />
+        </mesh>
+        <pointLight
+          ref={torchLight3}
+          color="#f97316"
+          intensity={2.6}
+          distance={14}
+          decay={2}
+        />
+      </group>
+
+      {/* North Torch (Right of Door) */}
+      <group position={[3.8, 2.7, -6.7]}>
+        <mesh>
+          <boxGeometry args={[0.15, 0.5, 0.15]} />
+          <meshStandardMaterial color="#2d1d12" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0.32, 0]}>
+          <coneGeometry args={[0.08, 0.22, 6]} />
+          <meshBasicMaterial color="#ff7700" />
+        </mesh>
+        <pointLight
+          ref={torchLight4}
+          color="#f97316"
+          intensity={2.6}
+          distance={14}
+          decay={2}
         />
       </group>
 

@@ -115,6 +115,7 @@ export default function RoomHUD() {
       {/* ========================================================
           1. TOP NAVIGATION & STATUS BAR
       ======================================================== */}
+      {!activeScare && (
       <header style={{
         position: 'absolute',
         top: 0,
@@ -348,6 +349,7 @@ export default function RoomHUD() {
           </button>
         </div>
       </header>
+      )}
 
       {/* ========================================================
           2. PERMANENT WALL RIDDLE BANNER
@@ -454,204 +456,212 @@ export default function RoomHUD() {
       {/* ========================================================
           HEARTBEAT PROXIMITY RADAR WIDGET (Bottom-Left)
       ======================================================== */}
-      <div style={{
-        position: 'absolute',
-        bottom: '24px',
-        left: '24px',
-        background: 'rgba(12, 10, 18, 0.92)',
-        border: `1px solid ${warmth > 0.5 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: '6px',
-        padding: '10px 18px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        boxShadow: warmth > 0.5 ? '0 0 25px rgba(239, 68, 68, 0.4)' : '0 4px 16px rgba(0,0,0,0.8)',
-        zIndex: 22,
-        pointerEvents: 'auto',
-        transition: 'all 0.3s ease'
-      }}>
-        {/* Pulsing EKG Heart Icon */}
+      {!activeScare && (
         <div style={{
-          width: '18px',
-          height: '18px',
-          borderRadius: '50%',
-          background: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8',
-          boxShadow: `0 0 12px ${warmth > 0.6 ? '#ef4444' : '#38bdf8'}`,
-          animation: `pulseHeart ${Math.max(0.4, 1.3 - (warmth || 0) * 0.85)}s infinite ease-in-out`
-        }} />
+          position: 'absolute',
+          bottom: '24px',
+          left: '24px',
+          background: 'rgba(12, 10, 18, 0.92)',
+          border: `1px solid ${warmth > 0.5 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`,
+          borderRadius: '6px',
+          padding: '10px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: warmth > 0.5 ? '0 0 25px rgba(239, 68, 68, 0.4)' : '0 4px 16px rgba(0,0,0,0.8)',
+          zIndex: 22,
+          pointerEvents: 'auto',
+          transition: 'all 0.3s ease'
+        }}>
+          {/* Pulsing EKG Heart Icon */}
+          <div style={{
+            width: '18px',
+            height: '18px',
+            borderRadius: '50%',
+            background: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8',
+            boxShadow: `0 0 12px ${warmth > 0.6 ? '#ef4444' : '#38bdf8'}`,
+            animation: `pulseHeart ${Math.max(0.4, 1.3 - (warmth || 0) * 0.85)}s infinite ease-in-out`
+          }} />
 
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
-              HEARTBEAT RADAR:
-            </span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
+                HEARTBEAT RADAR:
+              </span>
+              <span style={{
+                fontSize: '11px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontWeight: 800,
+                color: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8'
+              }}>
+                {72 + Math.round((warmth || 0) * 88)} BPM
+              </span>
+            </div>
             <span style={{
-              fontSize: '11px',
+              fontSize: '9px',
               fontFamily: 'JetBrains Mono, monospace',
-              fontWeight: 800,
-              color: warmth > 0.6 ? '#ef4444' : warmth > 0.2 ? '#f59e0b' : '#38bdf8'
+              color: warmth > 0.6 ? '#fca5a5' : '#6b7280',
+              letterSpacing: '1px'
             }}>
-              {72 + Math.round((warmth || 0) * 88)} BPM
+              {warmth > 0.7 ? 'CRITICAL PROXIMITY • RELIC NEARBY' : warmth > 0.35 ? 'WARM • ENTITY DETECTED' : 'FAINT CHILL'}
             </span>
           </div>
-          <span style={{
-            fontSize: '9px',
-            fontFamily: 'JetBrains Mono, monospace',
-            color: warmth > 0.6 ? '#fca5a5' : '#6b7280',
-            letterSpacing: '1px'
-          }}>
-            {warmth > 0.7 ? 'CRITICAL PROXIMITY • RELIC NEARBY' : warmth > 0.35 ? 'WARM • ENTITY DETECTED' : 'FAINT CHILL'}
-          </span>
-        </div>
 
-        <style>{`
-          @keyframes pulseHeart {
-            0% { transform: scale(0.85); opacity: 0.6; }
-            50% { transform: scale(1.25); opacity: 1; }
-            100% { transform: scale(0.85); opacity: 0.6; }
-          }
-        `}</style>
-      </div>
+          <style>{`
+            @keyframes pulseHeart {
+              0% { transform: scale(0.85); opacity: 0.6; }
+              50% { transform: scale(1.25); opacity: 1; }
+              100% { transform: scale(0.85); opacity: 0.6; }
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* ========================================================
           3. DYNAMIC RETICLE / CROSSHAIR
       ======================================================== */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          pointerEvents: focusedObject ? 'auto' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          zIndex: 25,
-          cursor: focusedObject ? 'pointer' : 'default'
-        }}
-        onClick={() => {
-          if (focusedObject) interactFocusedObject()
-        }}
-      >
-        <div style={{
-          width: focusedObject ? '42px' : '10px',
-          height: focusedObject ? '42px' : '10px',
-          border: `2px solid ${focusedObject ? '#ef4444' : 'rgba(255, 255, 255, 0.45)'}`,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.15s ease-out',
-          boxShadow: focusedObject ? '0 0 24px #ef4444' : 'none',
-          background: focusedObject ? 'rgba(239, 68, 68, 0.12)' : 'transparent'
-        }}>
-          {focusedObject ? (
-            <div style={{ width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%' }} />
-          ) : (
-            <div style={{ width: '2px', height: '2px', background: '#fff', borderRadius: '50%' }} />
-          )}
-        </div>
-
-        {/* Hover Prompt */}
-        {focusedObject && (
+      {!activeScare && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: focusedObject ? 'auto' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            zIndex: 25,
+            cursor: focusedObject ? 'pointer' : 'default'
+          }}
+          onClick={() => {
+            if (focusedObject) interactFocusedObject()
+          }}
+        >
           <div style={{
-            marginTop: '14px',
-            background: 'rgba(12, 10, 18, 0.96)',
-            border: '2px solid #ef4444',
-            borderRadius: '6px',
-            padding: '8px 18px',
-            boxShadow: '0 6px 25px rgba(0,0,0,0.95), 0 0 20px rgba(239, 68, 68, 0.4)',
+            width: focusedObject ? '42px' : '10px',
+            height: focusedObject ? '42px' : '10px',
+            border: `2px solid ${focusedObject ? '#ef4444' : 'rgba(255, 255, 255, 0.45)'}`,
+            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            animation: 'promptPop 0.2s ease-out'
+            justifyContent: 'center',
+            transition: 'all 0.15s ease-out',
+            boxShadow: focusedObject ? '0 0 24px #ef4444' : 'none',
+            background: focusedObject ? 'rgba(239, 68, 68, 0.12)' : 'transparent'
           }}>
-            <span style={{
-              background: '#dc2626',
-              color: '#fff',
-              fontSize: '11px',
-              fontFamily: 'JetBrains Mono, monospace',
-              fontWeight: 900,
-              padding: '3px 8px',
-              borderRadius: '3px'
-            }}>
-              LEFT CLICK / E
-            </span>
-            <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>
-              EXAMINE {focusedObject.display_name || focusedObject.filename}
-            </span>
+            {focusedObject ? (
+              <div style={{ width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%' }} />
+            ) : (
+              <div style={{ width: '2px', height: '2px', background: '#fff', borderRadius: '50%' }} />
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Hover Prompt */}
+          {focusedObject && (
+            <div style={{
+              marginTop: '14px',
+              background: 'rgba(12, 10, 18, 0.96)',
+              border: '2px solid #ef4444',
+              borderRadius: '6px',
+              padding: '8px 18px',
+              boxShadow: '0 6px 25px rgba(0,0,0,0.95), 0 0 20px rgba(239, 68, 68, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              animation: 'promptPop 0.2s ease-out'
+            }}>
+              <span style={{
+                background: '#dc2626',
+                color: '#fff',
+                fontSize: '11px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontWeight: 900,
+                padding: '3px 8px',
+                borderRadius: '3px'
+              }}>
+                LEFT CLICK / E
+              </span>
+              <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>
+                EXAMINE {focusedObject.display_name || focusedObject.filename}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ========================================================
           4. CARRIED CANDLE FOREGROUND (Exact Reference Image 9)
       ======================================================== */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-25px',
-        right: '8%',
-        width: '320px',
-        height: '420px',
-        pointerEvents: 'none',
-        zIndex: 18,
-        filter: lifelines > 0 ? 'drop-shadow(0 0 50px rgba(245, 158, 11, 0.45))' : 'grayscale(1) opacity(0.3)'
-      }}>
-        <img
-          src={lifelines > 0 ? "/assets/candle_carried.jpg" : "/assets/candle_extinguished.jpg"}
-          alt="Handheld Candle Flame"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            maskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)',
-            WebkitMaskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)'
-          }}
-        />
-      </div>
+      {!activeScare && (
+        <div style={{
+          position: 'absolute',
+          bottom: '-25px',
+          right: '8%',
+          width: '320px',
+          height: '420px',
+          pointerEvents: 'none',
+          zIndex: 18,
+          filter: lifelines > 0 ? 'drop-shadow(0 0 50px rgba(245, 158, 11, 0.45))' : 'grayscale(1) opacity(0.3)'
+        }}>
+          <img
+            src={lifelines > 0 ? "/assets/candle_carried.jpg" : "/assets/candle_extinguished.jpg"}
+            alt="Handheld Candle Flame"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              maskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)',
+              WebkitMaskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)'
+            }}
+          />
+        </div>
+      )}
 
       {/* ========================================================
           5. BOTTOM CONTROLS HINT FOOTER
       ======================================================== */}
-      <footer style={{
-        position: 'absolute',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '14px',
-        background: 'rgba(12, 10, 18, 0.92)',
-        padding: '8px 22px',
-        borderRadius: '4px',
-        border: '1px solid rgba(255,255,255,0.08)',
-        fontSize: '11px',
-        color: '#9ca3af',
-        fontFamily: 'JetBrains Mono, monospace',
-        zIndex: 22,
-        pointerEvents: 'auto'
-      }}>
-        <span><strong style={{ color: '#fff' }}>[W, A, S, D]</strong> Walk</span>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <span style={{ color: '#38bdf8' }}>[MOUSE] Look 360°</span>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <span><strong style={{ color: '#f59e0b' }}>[LEFT CLICK / E]</strong> Inspect Relic</span>
-        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <button
-          onClick={() => setShowPauseMenu(true)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#cbd5e1',
-            cursor: 'pointer',
-            fontSize: '11px',
-            fontFamily: 'JetBrains Mono, monospace',
-            textDecoration: 'underline'
-          }}
-        >
-          [ESC] Pause
-        </button>
-      </footer>
+      {!activeScare && (
+        <footer style={{
+          position: 'absolute',
+          bottom: '16px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          background: 'rgba(12, 10, 18, 0.92)',
+          padding: '8px 22px',
+          borderRadius: '4px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          fontSize: '11px',
+          color: '#9ca3af',
+          fontFamily: 'JetBrains Mono, monospace',
+          zIndex: 22,
+          pointerEvents: 'auto'
+        }}>
+          <span><strong style={{ color: '#fff' }}>[W, A, S, D]</strong> Walk</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+          <span style={{ color: '#38bdf8' }}>[MOUSE] Look 360°</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+          <span><strong style={{ color: '#f59e0b' }}>[LEFT CLICK / E]</strong> Inspect Relic</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+          <button
+            onClick={() => setShowPauseMenu(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#cbd5e1',
+              cursor: 'pointer',
+              fontSize: '11px',
+              fontFamily: 'JetBrains Mono, monospace',
+              textDecoration: 'underline'
+            }}
+          >
+            [ESC] Pause
+          </button>
+        </footer>
+      )}
 
       {/* ========================================================
           6. IN-GAME PAUSE MENU OVERLAY (ESC)
@@ -745,60 +755,142 @@ export default function RoomHUD() {
       )}
 
       {/* ========================================================
-          7. JUMP SCARE MODAL (Exact Visual Artworks, Zero Emojis)
+          7. JUMP SCARE MODAL (Cinematic Horror Lunge Takeover)
       ======================================================== */}
       {activeScare && currentScareVisual && (
         <div
           onClick={clearScare}
           style={{
             pointerEvents: 'auto',
-            position: 'absolute',
+            position: 'fixed',
             inset: 0,
-            zIndex: 50,
+            zIndex: 100,
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            background: 'radial-gradient(circle, rgba(185,28,28,0.92) 0%, rgba(4,3,6,0.98) 75%)',
-            animation: reduceScares ? 'none' : 'shakeScreen 0.15s infinite'
+            background: 'radial-gradient(circle at 50% 50%, rgba(136, 19, 19, 0.94) 0%, rgba(5, 3, 7, 0.98) 85%)',
+            boxShadow: 'inset 0 0 160px rgba(220, 38, 38, 0.85)',
+            animation: reduceScares ? 'none' : 'horrorScreenShake 0.12s infinite ease-in-out',
+            overflow: 'hidden'
           }}
         >
-          {/* Exact Artwork Asset Display */}
+          {/* Nightmare Backdrop Silhouette */}
           <div style={{
-            width: '260px',
-            height: '260px',
-            borderRadius: '12px',
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${currentScareVisual.image})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(12px) brightness(0.25) saturate(1.8)',
+            transform: 'scale(1.15)',
+            opacity: 0.6,
+            zIndex: 1
+          }} />
+
+          {/* Glitch & Red Scanline Overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 2px, transparent 2px, transparent 4px)',
+            pointerEvents: 'none',
+            zIndex: 2,
+            opacity: 0.7
+          }} />
+
+          {/* Central Terrifying Apparition (Lunging Towards Player) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 5,
+            width: '420px',
+            maxWidth: '85vw',
+            aspectRatio: '1 / 1',
+            borderRadius: '16px',
             overflow: 'hidden',
-            border: '3px solid #ef4444',
-            marginBottom: '20px',
-            boxShadow: '0 0 50px rgba(239, 68, 68, 0.8)',
-            transform: 'scale(1.05)'
+            border: '4px solid #ef4444',
+            marginBottom: '24px',
+            boxShadow: '0 0 80px rgba(239, 68, 68, 0.95), 0 0 140px rgba(0,0,0,0.95)',
+            animation: reduceScares ? 'none' : 'horrorLunge 0.35s cubic-bezier(0.12, 0.9, 0.2, 1) forwards'
           }}>
             <img
               src={currentScareVisual.image}
               alt="Nightmare Apparition"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: 'contrast(1.3) saturate(1.4) drop-shadow(0 0 20px #ef4444)'
+              }}
             />
           </div>
 
-          <h1 style={{
-            fontFamily: 'Creepster, cursive',
-            fontSize: '48px',
-            color: '#fff',
-            letterSpacing: '3px',
-            textShadow: '0 0 24px #ef4444',
-            margin: 0,
-            textAlign: 'center'
-          }}>
-            {currentScareVisual.title}
-          </h1>
-          <p style={{ color: '#fca5a5', fontSize: '15px', marginTop: '10px', textAlign: 'center' }}>
-            DECOY TRIGGERED! 1 candle was snuffed out ({lifelines} flame{lifelines === 1 ? '' : 's'} remaining).
-          </p>
-          <span style={{ color: '#9ca3af', fontSize: '11px', marginTop: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
-            [CLICK SCREEN TO DISMISS]
-          </span>
+          {/* Spooky Horror Typography */}
+          <div style={{ position: 'relative', zIndex: 6, textAlign: 'center', padding: '0 20px' }}>
+            <h1 style={{
+              fontFamily: 'Creepster, cursive',
+              fontSize: 'clamp(36px, 6vw, 64px)',
+              color: '#ffffff',
+              letterSpacing: '4px',
+              textShadow: '0 0 35px #ef4444, 0 0 10px #7f1d1d',
+              margin: '0 0 12px 0',
+              textTransform: 'uppercase'
+            }}>
+              {currentScareVisual.title}
+            </h1>
+            <p style={{
+              color: '#fca5a5',
+              fontSize: '18px',
+              fontWeight: 800,
+              fontFamily: 'JetBrains Mono, monospace',
+              margin: '0 0 8px 0',
+              textShadow: '0 0 12px rgba(239, 68, 68, 0.8)'
+            }}>
+              DECOY TRIGGERED! 1 CANDLE SNUFFED OUT ({lifelines} FLAME{lifelines === 1 ? '' : 'S'} REMAIN)
+            </p>
+            <p style={{
+              color: '#cbd5e1',
+              fontSize: '13px',
+              margin: '0 0 24px 0',
+              fontStyle: 'italic',
+              maxWidth: '560px',
+              lineHeight: 1.5
+            }}>
+              {currentScareVisual.subtitle}
+            </p>
+
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(239, 68, 68, 0.25)',
+              border: '2px solid #ef4444',
+              color: '#ffffff',
+              fontSize: '12px',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 900,
+              padding: '10px 24px',
+              borderRadius: '4px',
+              letterSpacing: '1.5px',
+              boxShadow: '0 0 30px rgba(239, 68, 68, 0.5)'
+            }}>
+              [CLICK ANYWHERE TO RECOVER SANITY]
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes horrorScreenShake {
+              0% { transform: translate(0px, 0px) rotate(0deg); }
+              20% { transform: translate(-8px, 6px) rotate(-0.5deg); }
+              40% { transform: translate(7px, -7px) rotate(0.6deg); }
+              60% { transform: translate(-6px, -4px) rotate(-0.4deg); }
+              80% { transform: translate(5px, 6px) rotate(0.3deg); }
+              100% { transform: translate(0px, 0px) rotate(0deg); }
+            }
+            @keyframes horrorLunge {
+              0% { transform: scale(0.5) translateZ(0); opacity: 0.2; }
+              60% { transform: scale(1.18) translateZ(0); opacity: 1; }
+              100% { transform: scale(1.05) translateZ(0); opacity: 1; }
+            }
+          `}</style>
         </div>
       )}
 

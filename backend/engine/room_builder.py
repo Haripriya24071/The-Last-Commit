@@ -91,16 +91,25 @@ def balance_files_across_rooms(repo_path: Path, findings: List[Finding]) -> Dict
         assigned_room = map_file_to_room(rel_str)
         room_files[assigned_room].append(f)
 
-    # Step 2: Dynamic balancing — if any room is empty, pull from the most crowded room
+    # Step 2: Iterative balancing — distribute files evenly across all 5 rooms so no room is left sparse
     if len(all_files) >= 5:
-        for room in ROOM_NAMES:
-            if len(room_files[room]) == 0:
-                # Find the room with the most files
-                fullest_room = max(ROOM_NAMES, key=lambda r: len(room_files[r]))
-                if len(room_files[fullest_room]) > 1:
-                    # Move a file to the empty room
-                    moved_file = room_files[fullest_room].pop()
-                    room_files[room].append(moved_file)
+        for _ in range(len(all_files) * 2):
+            emptiest_room = min(ROOM_NAMES, key=lambda r: len(room_files[r]))
+            fullest_room = max(ROOM_NAMES, key=lambda r: len(room_files[r]))
+            if len(room_files[fullest_room]) - len(room_files[emptiest_room]) > 1 and len(room_files[fullest_room]) > 2:
+                moved = room_files[fullest_room].pop()
+                room_files[emptiest_room].append(moved)
+            else:
+                break
+
+    # If any room still has fewer than 3 files, borrow healthy files as decoys
+    for room in ROOM_NAMES:
+        if len(room_files[room]) < 3:
+            available = [f for f in all_files if f not in room_files[room]]
+            if not available:
+                available = list(all_files)
+            while len(room_files[room]) < min(4, len(all_files)) and available:
+                room_files[room].append(available.pop(0))
 
     return room_files
 

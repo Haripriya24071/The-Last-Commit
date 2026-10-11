@@ -1,6 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import React, { useState, useRef } from 'react'
 import { ModelDispatcher } from './Props3D'
 import { useGameStore } from '../store/gameStore'
 import { AudioEngine } from './AudioEngine'
@@ -36,14 +34,8 @@ export default function InteractiveObject({ objData }) {
     })
   }
 
-  // Gentle eerie floating animation
-  useFrame((state) => {
-    if (groupRef.current) {
-      const baseY = (objData.position && objData.position[1]) || 0
-      const floatOffset = Math.sin(state.clock.elapsedTime * 2.0 + (objData.position?.[0] || 0)) * 0.08
-      groupRef.current.position.y = baseY + floatOffset
-    }
-  })
+  // Determine if prop needs an altar pedestal or stands on the floor
+  const isFloorStanding = objData.model_type === 'chest' || objData.model_type === 'clock'
 
   return (
     <group
@@ -59,58 +51,48 @@ export default function InteractiveObject({ objData }) {
         setHovered(false)
       }}
     >
-      {/* 3D Procedural Gothic Model */}
+      {/* 1. Physical Carved Stone Altar Pedestal for tabletop artifacts */}
+      {!isFloorStanding && (
+        <group position={[0, -0.45, 0]}>
+          {/* Gothic Octagonal Column Shaft */}
+          <mesh castShadow receiveShadow>
+            <cylinderGeometry args={[0.36, 0.44, 0.9, 8]} />
+            <meshStandardMaterial color="#191522" roughness={0.85} metalness={0.2} />
+          </mesh>
+          {/* Ornate Tabletop Altar Slab */}
+          <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.52, 0.52, 0.08, 8]} />
+            <meshStandardMaterial color="#251d32" roughness={0.7} />
+          </mesh>
+          {/* Inlaid Ancient Runic Ring Glow when Focused */}
+          {isHighlighted && (
+            <mesh position={[0, 0.495, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.26, 0.48, 16]} />
+              <meshBasicMaterial color={glowColor} transparent opacity={0.75} />
+            </mesh>
+          )}
+        </group>
+      )}
+
+      {/* Floor Plinth for Large Furniture (Chest / Grandfather Clock) */}
+      {isFloorStanding && (
+        <mesh position={[0, 0.04, 0]} receiveShadow>
+          <boxGeometry args={[1.4, 0.08, 1.0]} />
+          <meshStandardMaterial color="#161220" roughness={0.8} />
+        </mesh>
+      )}
+
+      {/* 2. 3D Procedural Gothic Model */}
       <ModelDispatcher
         modelType={objData.model_type}
         isHovered={isHighlighted}
         glowColor={glowColor}
       />
 
-      {/* Floating Diegetic Tag with Gothic Badge */}
-      <Html position={[0, 2.2, 0]} center distanceFactor={7}>
-        <div
-          onClick={handleClick}
-          style={{
-            padding: '6px 14px',
-            background: isHighlighted ? 'rgba(220, 38, 38, 0.95)' : 'rgba(10, 14, 26, 0.9)',
-            border: `2px solid ${isHighlighted ? '#ef4444' : glowColor}`,
-            borderRadius: '4px',
-            color: '#fff',
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '12px',
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            whiteSpace: 'nowrap',
-            cursor: 'pointer',
-            boxShadow: isHighlighted ? `0 0 20px ${glowColor}` : '0 4px 14px rgba(0,0,0,0.85)',
-            transition: 'all 0.15s ease-out',
-            transform: isHighlighted ? 'scale(1.12)' : 'scale(1.0)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span style={{ color: '#f59e0b', fontSize: '10px' }}>◆</span>
-          <span>{objData.display_name || objData.filename}</span>
-          {isHighlighted && (
-            <span style={{
-              background: '#ef4444',
-              color: '#fff',
-              fontSize: '10px',
-              padding: '2px 6px',
-              borderRadius: '2px',
-              fontWeight: 900
-            }}>
-              [E / CLICK]
-            </span>
-          )}
-        </div>
-      </Html>
-
-      {/* Spectral Aura Light when Targeted */}
+      {/* 3. Dynamic Spectral Aura Light when Targeted */}
       {isHighlighted && (
         <pointLight
-          position={[0, 0.6, 0]}
+          position={[0, 0.7, 0]}
           color={glowColor}
           intensity={2.8}
           distance={4.5}
