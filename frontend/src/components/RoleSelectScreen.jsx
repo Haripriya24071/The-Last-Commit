@@ -7,56 +7,48 @@ export default function RoleSelectScreen() {
     rolePresence,
     setRole,
     setScreen,
-    fetchMansionMap,
     repoUrl
   } = useGameStore()
 
-  // The 3 Entities directly based on User's Visual Reference PDF:
-  // - Skeleton: Root-tendon creature in stone arch (Image 1)
-  // - Reaper: Black mist wraith with clawed hands (Image 6)
-  // - Ghost: Veiled spectral figure descending staircase (Image 7)
+  // The 3 Entities using the EXACT images from the reference PDF:
+  // - Skeleton: Reference Image 1 (skeleton_character.jpg)
+  // - Reaper: Reference Image 6 (reaper_character.jpg)
+  // - Ghost: Reference Image 7 (ghost_character.jpg)
   const rolesConfig = [
     {
       id: 'ghost',
-      title: 'THE VEILED GHOST',
+      title: 'THE GHOST',
       archetype: 'Spectral Lady of the Staircase',
-      referenceTag: 'Reference Image 7',
-      description: 'Ethereal veiled phantom descending the dark manor staircase. Senses abandoned logic, dead branches, bare exceptions, and forgotten functions.',
+      image: '/assets/ghost_character.jpg',
+      description: 'Veiled phantom descending the manor stairs. Senses abandoned logic, dead branches, bare exceptions, and forgotten functions.',
       themeColor: '#38bdf8',
-      visualIcon: '👻',
-      auraColor: 'rgba(56, 189, 248, 0.25)',
       borderColor: '#38bdf8',
-      scent: 'Smells: Dead Code, Empty Catches, Unreachable Logic'
+      scent: 'TARGETS: Dead Functions • Bare Exceptions • Unused Imports'
     },
     {
       id: 'reaper',
-      title: 'THE SHADOW REAPER',
-      archetype: 'Clawed Wraith of the Mist',
-      referenceTag: 'Reference Image 6',
-      description: 'Towering entity in tattered black cowls with reaching clawed talons and billowing smoke. Senses committed secrets, leaked API keys, and injection vulnerabilities.',
+      title: 'THE REAPER',
+      archetype: 'Shadow Wraith of the Mist',
+      image: '/assets/reaper_character.jpg',
+      description: 'Towering entity in tattered cowls with clawed talons and billowing smoke. Senses committed secrets, leaked API keys, and injection holes.',
       themeColor: '#ef4444',
-      visualIcon: '💀',
-      auraColor: 'rgba(239, 68, 68, 0.3)',
       borderColor: '#ef4444',
-      scent: 'Smells: Exposed .env Secrets, Hardcoded Keys, Eval Injections'
+      scent: 'TARGETS: Exposed .env • Hardcoded Tokens • Dangerous Eval'
     },
     {
       id: 'skeleton',
-      title: 'THE ROOT SKELETON',
-      archetype: 'Emaciated Tendon Beast',
-      referenceTag: 'Reference Image 1',
-      description: 'Slender, horrifying creature woven from ancient roots, bare bone, and dark sinew standing in the stone arch. Senses rotting architectural complexity and massive bloated files.',
+      title: 'THE SKELETON',
+      archetype: 'Root Tendon Beast',
+      image: '/assets/skeleton_character.jpg',
+      description: 'Slender, horrifying creature woven from roots, bone, and dark sinew in the stone arch. Senses rotting complexity and bloated files.',
       themeColor: '#f59e0b',
-      visualIcon: '🦴',
-      auraColor: 'rgba(245, 158, 11, 0.25)',
       borderColor: '#f59e0b',
-      scent: 'Smells: Cyclomatic Debt, Bloated Files, Unresolved TODOs'
+      scent: 'TARGETS: High Complexity • Bloated Files • Unresolved Debt'
     }
   ]
 
   const handleSelectRole = (selectedId) => {
     setRole(selectedId)
-    // Moves to Screen 4: The Broken Frame Repo Input on the Staircase (Reference Image 14)
     setScreen('repo_input')
   }
 
@@ -64,7 +56,10 @@ export default function RoleSelectScreen() {
     <div style={{
       width: '100vw',
       height: '100vh',
-      background: 'radial-gradient(circle at 50% 25%, #141b24 0%, #080a10 50%, #020204 100%)',
+      background: '#040306',
+      backgroundImage: 'url(/assets/mansion_exterior_gates.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -76,58 +71,46 @@ export default function RoleSelectScreen() {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background Gothic Gate Silhouette (Reference Image 17) */}
+      {/* Heavy Dark Fog & Vignette Overlay */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `
-          linear-gradient(to bottom, rgba(5, 5, 8, 0.6), rgba(3, 2, 6, 0.95)),
-          radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 70%)
-        `,
+        background: 'linear-gradient(to bottom, rgba(4, 3, 6, 0.85) 0%, rgba(4, 3, 6, 0.92) 100%)',
         pointerEvents: 'none'
       }} />
 
-      {/* Estate Gates Header Bar */}
-      <div style={{ textAlign: 'center', marginBottom: '28px', position: 'relative', zIndex: 10 }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 14px',
-          background: 'rgba(239, 68, 68, 0.15)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '9999px',
-          fontSize: '11px',
+      {/* Header Bar */}
+      <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative', zIndex: 10 }}>
+        <span style={{
+          fontSize: '10px',
           fontFamily: 'JetBrains Mono, monospace',
-          color: '#fca5a5',
-          marginBottom: '10px'
+          color: '#f87171',
+          letterSpacing: '3px',
+          textTransform: 'uppercase',
+          fontWeight: 800
         }}>
-          <span>🏰</span>
-          <span>ESTATE GATES • CHOOSE YOUR MANIFESTATION</span>
-        </div>
+          ESTATE GATES • CHOOSE YOUR MANIFESTATION
+        </span>
 
         <h2 style={{
           fontFamily: 'Cinzel Decorative, serif',
           fontSize: '32px',
           fontWeight: 900,
-          color: '#f87171',
-          margin: 0,
+          color: '#fca5a5',
+          margin: '4px 0 0 0',
           letterSpacing: '2px',
-          textShadow: '0 0 25px rgba(239, 68, 68, 0.5)'
+          textShadow: '0 0 25px rgba(239, 68, 68, 0.6)'
         }}>
           WHICH SPECTRE WALKS WITH YOU?
         </h2>
-        <p style={{ color: '#9ca3af', fontSize: '13px', margin: '6px 0 0 0' }}>
-          Each entity is tuned to detect different paranormal code flaws hiding inside the mansion.
-        </p>
       </div>
 
-      {/* The 3 Character Persona Cards (Matching Visual References 1, 6, 7) */}
+      {/* The 3 Character Persona Cards using Exact PDF Images */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px',
-        maxWidth: '1180px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '20px',
+        maxWidth: '1120px',
         width: '100%',
         position: 'relative',
         zIndex: 10
@@ -141,61 +124,73 @@ export default function RoleSelectScreen() {
               key={r.id}
               onClick={() => handleSelectRole(r.id)}
               style={{
-                background: 'rgba(16, 14, 26, 0.94)',
-                border: `2px solid ${isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.1)'}`,
-                borderRadius: '16px',
-                padding: '28px',
+                background: 'rgba(10, 8, 14, 0.95)',
+                border: `2px solid ${isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.12)'}`,
+                borderRadius: '12px',
+                overflow: 'hidden',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: isCurrent ? `0 0 40px ${r.auraColor}` : '0 10px 30px rgba(0,0,0,0.8)',
-                transition: 'all 0.2s ease',
-                position: 'relative',
-                overflow: 'hidden'
+                boxShadow: isCurrent ? `0 0 35px ${r.borderColor}` : '0 10px 40px rgba(0,0,0,0.9)',
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.borderColor = r.borderColor
-                e.currentTarget.style.boxShadow = `0 0 35px ${r.auraColor}`
+                e.currentTarget.style.boxShadow = `0 0 35px ${r.borderColor}`
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.borderColor = isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.1)'
-                e.currentTarget.style.boxShadow = isCurrent ? `0 0 40px ${r.auraColor}` : '0 10px 30px rgba(0,0,0,0.8)'
+                e.currentTarget.style.borderColor = isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.12)'
+                e.currentTarget.style.boxShadow = isCurrent ? `0 0 35px ${r.borderColor}` : '0 10px 40px rgba(0,0,0,0.9)'
               }}
             >
-              {/* Top Persona Header */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                  <div style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '12px',
-                    background: r.auraColor,
-                    border: `1px solid ${r.borderColor}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '34px',
-                    boxShadow: `0 0 20px ${r.auraColor}`
-                  }}>
-                    {r.visualIcon}
-                  </div>
+              {/* Exact Character Image from PDF */}
+              <div style={{
+                width: '100%',
+                height: '240px',
+                overflow: 'hidden',
+                position: 'relative',
+                background: '#000'
+              }}>
+                <img
+                  src={r.image}
+                  alt={r.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'top center',
+                    filter: 'contrast(1.1) brightness(0.95)',
+                    display: 'block'
+                  }}
+                />
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(10, 8, 14, 1) 0%, transparent 60%)'
+                }} />
 
-                  <span style={{
-                    fontSize: '10px',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontWeight: 800,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background: presence === 'strong' ? '#065f46' : '#854d0e',
-                    color: '#fff'
-                  }}>
-                    {presence.toUpperCase()} PRESENCE
-                  </span>
-                </div>
+                <span style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  fontSize: '9px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  background: presence === 'strong' ? '#065f46' : '#854d0e',
+                  color: '#fff',
+                  letterSpacing: '1px'
+                }}>
+                  {presence.toUpperCase()}
+                </span>
+              </div>
 
+              {/* Persona Description */}
+              <div style={{ padding: '0 20px 20px 20px' }}>
                 <span style={{
                   fontSize: '10px',
                   fontFamily: 'JetBrains Mono, monospace',
@@ -208,29 +203,26 @@ export default function RoleSelectScreen() {
 
                 <h3 style={{
                   fontFamily: 'Cinzel Decorative, serif',
-                  fontSize: '22px',
+                  fontSize: '20px',
                   color: '#fff',
-                  margin: '4px 0 10px 0'
+                  margin: '4px 0 8px 0'
                 }}>
                   {r.title}
                 </h3>
 
-                <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+                <p style={{ color: '#9ca3af', fontSize: '12px', lineHeight: 1.4, margin: '0 0 14px 0' }}>
                   {r.description}
                 </p>
-              </div>
 
-              {/* Scent & Selection Action */}
-              <div>
                 <div style={{
-                  padding: '8px 12px',
-                  background: 'rgba(0, 0, 0, 0.5)',
+                  padding: '6px 10px',
+                  background: 'rgba(0, 0, 0, 0.6)',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '8px',
-                  fontSize: '11px',
+                  borderRadius: '4px',
+                  fontSize: '10px',
                   fontFamily: 'JetBrains Mono, monospace',
                   color: '#cbd5e1',
-                  marginBottom: '18px'
+                  marginBottom: '16px'
                 }}>
                   {r.scent}
                 </div>
@@ -238,19 +230,20 @@ export default function RoleSelectScreen() {
                 <button
                   style={{
                     width: '100%',
-                    padding: '12px',
+                    padding: '10px',
                     background: isCurrent ? r.borderColor : 'rgba(255, 255, 255, 0.08)',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '4px',
                     fontFamily: 'Inter, sans-serif',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: isCurrent ? `0 0 20px ${r.auraColor}` : 'none'
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer'
                   }}
                 >
-                  {isCurrent ? 'SELECTED PERSONA' : 'CHOOSE THIS SPECTRE'}
+                  {isCurrent ? 'ACTIVE ENTITY' : 'CHOOSE SPECTRE'}
                 </button>
               </div>
             </div>
