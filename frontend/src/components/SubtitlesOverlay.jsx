@@ -46,7 +46,7 @@ export default function SubtitlesOverlay() {
           letterSpacing: '1.5px',
           marginBottom: '4px'
         }}>
-          🗣️ {activeSubtitle.speaker}
+          {activeSubtitle.speaker}
         </div>
         <div style={{
           color: '#f8fafc',
