@@ -82,11 +82,25 @@ export default function App() {
           padding: '24px',
           textAlign: 'center'
         }}>
-          <span style={{ fontSize: '64px', marginBottom: '16px' }}>⚡👻</span>
-          <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: '28px', color: '#ef4444', margin: '0 0 8px 0' }}>
+          <div style={{
+            width: '90px',
+            height: '90px',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            border: '2px solid #ef4444',
+            marginBottom: '16px',
+            boxShadow: '0 0 24px rgba(239, 68, 68, 0.4)'
+          }}>
+            <img
+              src="/assets/skeleton_character.jpg"
+              alt="Spectral Guardian"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
+          <h2 style={{ fontFamily: 'Cinzel Decorative, serif', fontSize: '28px', color: '#ef4444', margin: '0 0 8px 0', letterSpacing: '2px' }}>
             THE SPIRITS ARE RESTLESS
           </h2>
-          <p style={{ color: '#fca5a5', fontSize: '14px', maxWidth: '520px', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+          <p style={{ color: '#fca5a5', fontSize: '14px', maxWidth: '520px', lineHeight: 1.5, margin: '0 0 24px 0', fontFamily: 'JetBrains Mono, monospace' }}>
             {healthError}
           </p>
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -97,13 +111,15 @@ export default function App() {
                 background: '#dc2626',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer'
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif'
               }}
             >
-              🔄 Retry Connection
+              RETRY CONNECTION
             </button>
             <button
               onClick={() => {
@@ -112,16 +128,18 @@ export default function App() {
               }}
               style={{
                 padding: '12px 24px',
-                background: '#334155',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer'
+                background: '#1e293b',
+                color: '#cbd5e1',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif'
               }}
             >
-              🏚️ Use the Cursed House
+              ENTER SAMPLE MANOR
             </button>
           </div>
         </div>
