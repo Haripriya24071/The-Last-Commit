@@ -37,21 +37,24 @@ export default function RoomHUD() {
     isMuted,
     toggleMute,
     enableSkeletonVoice,
-    toggleSkeletonVoice
+    toggleSkeletonVoice,
+    focusedObject,
+    interactFocusedObject
   } = useGameStore()
 
   const [showDrawer, setShowDrawer] = useState(false)
+  const [showPauseMenu, setShowPauseMenu] = useState(false)
 
-  // Listen for Escape key to return to map
+  // Escape key toggles in-game pause menu instead of abruptly quitting
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
-        returnToMap()
+        setShowPauseMenu((prev) => !prev)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [returnToMap])
+  }, [])
 
   // Heartbeat sound loop driven by /api/warmth
   useEffect(() => {
@@ -371,44 +374,148 @@ export default function RoomHUD() {
         </div>
       )}
 
-      {/* 4. Center Crosshair (When Pointer Locked) */}
-      {isPointerLocked && (
+      {/* 4. Dynamic Reticle / Crosshair */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: focusedObject ? 'auto' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        zIndex: 25,
+        cursor: focusedObject ? 'pointer' : 'default'
+      }}
+      onClick={() => {
+        if (focusedObject) interactFocusedObject()
+      }}
+      >
         <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '6px',
-          height: '6px',
-          background: 'rgba(255, 255, 255, 0.7)',
+          width: focusedObject ? '36px' : '10px',
+          height: focusedObject ? '36px' : '10px',
+          border: `2px solid ${focusedObject ? '#ef4444' : 'rgba(255, 255, 255, 0.45)'}`,
           borderRadius: '50%',
-          boxShadow: '0 0 8px rgba(255, 255, 255, 0.9)',
-          pointerEvents: 'none'
-        }} />
-      )}
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: focusedObject ? '0 0 20px #ef4444, inset 0 0 10px rgba(239, 68, 68, 0.5)' : 'none',
+          transition: 'all 0.15s ease-out',
+          animation: focusedObject ? 'pulse 0.6s infinite' : 'none'
+        }}>
+          <div style={{
+            width: '4px',
+            height: '4px',
+            background: focusedObject ? '#ef4444' : '#fff',
+            borderRadius: '50%'
+          }} />
+        </div>
 
-      {/* 5. Pause Menu Overlay (Shown whenever Pointer Lock is released via Esc or click outside) */}
-      {!isPointerLocked && !isGameOver && !activeRelicModal && !activeScare && !showReport && (
+        {/* Diegetic In-World Action Prompt */}
+        {focusedObject && (
+          <div style={{
+            marginTop: '12px',
+            padding: '6px 16px',
+            background: 'rgba(220, 38, 38, 0.95)',
+            border: '1px solid #fca5a5',
+            borderRadius: '8px',
+            color: '#fff',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '12px',
+            fontWeight: 800,
+            letterSpacing: '0.5px',
+            boxShadow: '0 0 24px rgba(220, 38, 38, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'candleFlicker 1.5s infinite'
+          }}>
+            <span>📜</span>
+            <span>[E / CLICK] CLEANSE: {focusedObject.display_name || focusedObject.filename}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 5. Bottom Gameplay Controls Guide Banner */}
+      <footer style={{
+        position: 'absolute',
+        bottom: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        background: 'rgba(10, 8, 16, 0.85)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        padding: '8px 20px',
+        borderRadius: '9999px',
+        pointerEvents: 'auto',
+        fontSize: '11px',
+        fontFamily: 'JetBrains Mono, monospace',
+        color: '#9ca3af',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+      }}>
+        <span><strong style={{ color: '#fff' }}>[WASD]</strong> Move</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+        <button
+          onClick={() => {
+            const canvas = document.querySelector('canvas')
+            if (canvas) canvas.requestPointerLock?.()
+          }}
+          style={{
+            background: isPointerLocked ? 'rgba(56, 189, 248, 0.2)' : 'rgba(239, 68, 68, 0.25)',
+            border: `1px solid ${isPointerLocked ? '#38bdf8' : '#ef4444'}`,
+            color: isPointerLocked ? '#38bdf8' : '#fca5a5',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          {isPointerLocked ? '🎯 MOUSE LOOK ACTIVE (ESC TO RELEASE)' : '🖱️ CLICK FOR MOUSE LOOK (OR DRAG)'}
+        </button>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+        <span><strong style={{ color: '#f59e0b' }}>[E / CLICK]</strong> Inspect</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+        <button
+          onClick={() => setShowPauseMenu(true)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#cbd5e1',
+            cursor: 'pointer',
+            fontSize: '11px',
+            textDecoration: 'underline'
+          }}
+        >
+          [ESC] Pause
+        </button>
+      </footer>
+
+      {/* 6. Explicit Pause Menu Overlay (Only shown when user presses ESC or clicks Pause) */}
+      {showPauseMenu && !isGameOver && !activeRelicModal && !activeScare && (
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(5, 5, 8, 0.75)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(5, 5, 8, 0.82)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 30,
+          zIndex: 35,
           pointerEvents: 'auto'
         }}>
           <div style={{
-            background: 'rgba(18, 14, 28, 0.95)',
-            border: '2px solid rgba(239, 68, 68, 0.4)',
+            background: 'rgba(18, 14, 28, 0.96)',
+            border: '2px solid rgba(239, 68, 68, 0.5)',
             borderRadius: '16px',
             padding: '32px 40px',
             textAlign: 'center',
             maxWidth: '460px',
             width: '90%',
-            boxShadow: '0 0 40px rgba(0,0,0,0.9)'
+            boxShadow: '0 0 50px rgba(0,0,0,0.9)'
           }}>
             <div style={{ fontSize: '36px', marginBottom: '8px' }}>⏸️🕯️</div>
             <h3 style={{
@@ -418,18 +525,15 @@ export default function RoomHUD() {
               margin: '0 0 6px 0',
               letterSpacing: '1px'
             }}>
-              PAUSED: MANSION ROOM
+              INVESTIGATION PAUSED
             </h3>
             <p style={{ color: '#9ca3af', fontSize: '12px', margin: '0 0 24px 0' }}>
-              Pointer released. Resume first-person code investigation or return to the blueprint.
+              Your lantern light flickers in the silence of {roomData?.title || currentRoom}.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button
-                onClick={() => {
-                  const canvas = document.querySelector('canvas')
-                  if (canvas) canvas.requestPointerLock?.()
-                }}
+                onClick={() => setShowPauseMenu(false)}
                 style={{
                   padding: '12px',
                   background: '#dc2626',
@@ -446,7 +550,10 @@ export default function RoomHUD() {
               </button>
 
               <button
-                onClick={returnToMap}
+                onClick={() => {
+                  setShowPauseMenu(false)
+                  returnToMap()
+                }}
                 style={{
                   padding: '12px',
                   background: 'rgba(255,255,255,0.08)',
@@ -459,7 +566,7 @@ export default function RoomHUD() {
                   fontFamily: 'Inter, sans-serif'
                 }}
               >
-                🗺️ RETURN TO MAP (No Visit Consumed)
+                🗺️ RETURN TO CURSED BLUEPRINT (Save Visit)
               </button>
             </div>
           </div>
