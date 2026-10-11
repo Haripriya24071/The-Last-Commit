@@ -27,22 +27,30 @@ export default function CandleLightRelicAnimation() {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)'
+      background: 'radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, transparent 70%)'
     }}>
-      {/* Ascending Glowing Relic Candle Flame */}
+      {/* Ascending Glowing Relic Candle Flame from User Reference Image */}
       <div style={{
-        fontSize: '84px',
-        animation: 'candleFlicker 0.4s infinite',
-        filter: 'drop-shadow(0 0 35px #f59e0b) drop-shadow(0 0 60px #fbbf24)'
+        width: '110px',
+        height: '150px',
+        borderRadius: '6px',
+        overflow: 'hidden',
+        border: '2px solid #fbbf24',
+        boxShadow: '0 0 50px #f59e0b, 0 0 90px #fbbf24',
+        animation: 'candleFlicker 0.4s infinite'
       }}>
-        🕯️✨
+        <img
+          src="/assets/candle_returns.jpg"
+          alt="Relic Ignited"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
       </div>
       <div style={{
         fontFamily: 'Cinzel Decorative, serif',
         fontSize: '24px',
         color: '#fbbf24',
         letterSpacing: '2px',
-        marginTop: '12px',
+        marginTop: '16px',
         textShadow: '0 0 20px #f59e0b',
         fontWeight: 700
       }}>
