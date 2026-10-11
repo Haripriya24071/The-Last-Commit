@@ -62,3 +62,31 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
   border-radius: 12px;
 }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: 0.85; }
+}
+
+@keyframes shakeScreen {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-3px, 3px) rotate(-1deg); }
+  50% { transform: translate(3px, -3px) rotate(1deg); }
+  75% { transform: translate(-2px, -2px) rotate(0.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Custom Haunted Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #08060d;
+}
+::-webkit-scrollbar-thumb {
+  background: #2d2438;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
+}
