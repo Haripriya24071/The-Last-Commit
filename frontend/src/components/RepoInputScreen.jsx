@@ -7,9 +7,7 @@ export default function RepoInputScreen() {
     setRepoUrl,
     isScanning,
     scanProgressMessage,
-    runScanRitual,
-    setScreen,
-    fallbackReason
+    runScanRitual
   } = useGameStore()
 
   const [inputUrl, setInputUrl] = useState(repoUrl === 'sample' ? '' : repoUrl)
@@ -53,7 +51,10 @@ export default function RepoInputScreen() {
     <div style={{
       width: '100vw',
       height: '100vh',
-      background: 'radial-gradient(circle at 50% 30%, #161c28 0%, #0a0e16 50%, #020306 100%)',
+      background: '#040306',
+      backgroundImage: 'url(/assets/repo_frame_staircase.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -65,67 +66,28 @@ export default function RepoInputScreen() {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background Grand Staircase & Cracked Walls (Reference Image 14) */}
+      {/* Heavy Dark Atmospheric Gradient */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `
-          linear-gradient(to bottom, rgba(8, 6, 14, 0.7), rgba(2, 2, 4, 0.96)),
-          radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 60%)
-        `,
+        background: 'linear-gradient(to bottom, rgba(4, 3, 6, 0.78) 0%, rgba(4, 3, 6, 0.94) 100%)',
         pointerEvents: 'none'
       }} />
 
-      {/* Hanging Iron Chandelier Silhouette */}
+      {/* The Broken Picture Frame Attachment Box (Exact Reference Image 14 aesthetic) */}
       <div style={{
-        position: 'absolute',
-        top: '-10px',
-        fontSize: '48px',
-        opacity: 0.35,
-        filter: 'drop-shadow(0 0 20px #f59e0b)',
-        pointerEvents: 'none'
-      }}>
-        🕯️
-      </div>
-
-      {/* The Spooky Broken Photo Frame (Reference Image 14) */}
-      <div style={{
-        maxWidth: '680px',
+        maxWidth: '640px',
         width: '100%',
-        background: '#0c0a14',
-        backgroundImage: 'radial-gradient(circle at 50% 50%, #181224 0%, #0c0a14 100%)',
-        border: '8px solid #332014',
-        outline: '3px solid #78350f',
-        borderRadius: '12px',
-        padding: '36px 44px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.95), inset 0 0 40px rgba(0,0,0,0.9), 0 0 35px rgba(120, 53, 15, 0.4)',
+        background: 'rgba(12, 10, 16, 0.94)',
+        border: '3px solid #78350f',
+        borderRadius: '8px',
+        padding: '36px 40px',
+        boxShadow: '0 25px 80px rgba(0,0,0,0.98), inset 0 0 35px rgba(0,0,0,0.9)',
         position: 'relative',
         zIndex: 10
       }}>
-        {/* Cracked Glass Overlays across the frame */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: '40px',
-          width: '2px',
-          height: '70px',
-          background: 'rgba(255,255,255,0.15)',
-          transform: 'rotate(25deg)',
-          pointerEvents: 'none'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '60px',
-          width: '2px',
-          height: '90px',
-          background: 'rgba(255,255,255,0.12)',
-          transform: 'rotate(-35deg)',
-          pointerEvents: 'none'
-        }} />
-
-        {/* Frame Plaque Header */}
-        <div style={{ textAlign: 'center', marginBottom: '26px' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <span style={{
             fontSize: '10px',
             fontFamily: 'JetBrains Mono, monospace',
@@ -134,7 +96,7 @@ export default function RepoInputScreen() {
             textTransform: 'uppercase',
             fontWeight: 800
           }}>
-            VESSEL OF THE CURSED REPOSITORY
+            SHATTERED PORTRAIT VESSEL
           </span>
           <h2 style={{
             fontFamily: 'Cinzel Decorative, serif',
@@ -144,23 +106,23 @@ export default function RepoInputScreen() {
             letterSpacing: '2px',
             textShadow: '0 0 20px rgba(239, 68, 68, 0.5)'
           }}>
-            FEED THE HOUSE
+            FEED THE REPOSITORY
           </h2>
           <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
-            Inscribe a GitHub repository URL into the shattered portrait to rebuild its architecture into the haunted estate.
+            Inscribe your target GitHub repository into the frame. The AST scanner will rebuild its architecture into the haunted mansion.
           </p>
         </div>
 
-        {/* Input Bar inside Frame */}
+        {/* Input Bar */}
         <div style={{ marginBottom: '20px' }}>
           <div style={{
             display: 'flex',
-            gap: '12px',
-            background: 'rgba(5, 5, 8, 0.9)',
-            border: '2px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '10px',
+            gap: '10px',
+            background: 'rgba(5, 4, 8, 0.95)',
+            border: '1px solid rgba(239, 68, 68, 0.5)',
+            borderRadius: '6px',
             padding: '6px',
-            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.8)'
+            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.9)'
           }}>
             <input
               type="text"
@@ -186,48 +148,46 @@ export default function RepoInputScreen() {
               onClick={() => handleScan()}
               disabled={isScanning}
               style={{
-                padding: '10px 22px',
+                padding: '10px 24px',
                 background: '#dc2626',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 fontFamily: 'Inter, sans-serif',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 800,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
                 cursor: isScanning ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 0 15px rgba(220, 38, 38, 0.6)'
+                boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)'
               }}
             >
-              <span>🕯️</span>
-              <span>INSCRIBE</span>
+              INSCRIBE
             </button>
           </div>
 
           {validationError && (
             <p style={{ color: '#f87171', fontSize: '11px', margin: '8px 0 0 6px', fontFamily: 'JetBrains Mono, monospace' }}>
-              ⚠️ {validationError}
+              ERROR: {validationError}
             </p>
           )}
           {scanError && (
             <p style={{ color: '#ef4444', fontSize: '11px', margin: '8px 0 0 6px', fontFamily: 'JetBrains Mono, monospace' }}>
-              ❌ {scanError}
+              ERROR: {scanError}
             </p>
           )}
         </div>
 
-        {/* Or Cursed Built-in House */}
+        {/* Cursed Sample House Option */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: '14px',
+          gap: '12px',
           borderTop: '1px solid rgba(255,255,255,0.08)',
-          paddingTop: '20px'
+          paddingTop: '18px'
         }}>
-          <span style={{ fontSize: '12px', color: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}>OR</span>
+          <span style={{ fontSize: '11px', color: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}>OR</span>
           <button
             onClick={() => handleScan('sample')}
             disabled={isScanning}
@@ -236,18 +196,14 @@ export default function RepoInputScreen() {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               color: '#fde68a',
               padding: '10px 20px',
-              borderRadius: '8px',
+              borderRadius: '6px',
               fontFamily: 'Inter, sans-serif',
               fontSize: '12px',
               fontWeight: 700,
-              cursor: isScanning ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              cursor: isScanning ? 'not-allowed' : 'pointer'
             }}
           >
-            <span>🏚️</span>
-            <span>ENTER THE CURSED SAMPLE ESTATE (Offline Safe)</span>
+            ENTER THE CURSED SAMPLE ESTATE (Offline Safe)
           </button>
         </div>
       </div>
@@ -257,7 +213,7 @@ export default function RepoInputScreen() {
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(5, 5, 8, 0.95)',
+          background: 'rgba(4, 3, 6, 0.96)',
           backdropFilter: 'blur(16px)',
           display: 'flex',
           flexDirection: 'column',
@@ -265,13 +221,6 @@ export default function RepoInputScreen() {
           alignItems: 'center',
           zIndex: 90
         }}>
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '16px',
-            animation: 'candleFlicker 1s infinite'
-          }}>
-            🕯️👁️
-          </div>
           <h3 style={{
             fontFamily: 'Cinzel Decorative, serif',
             fontSize: '26px',
