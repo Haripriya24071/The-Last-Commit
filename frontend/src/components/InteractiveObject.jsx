@@ -54,7 +54,6 @@ export default function InteractiveObject({ objData }) {
       onPointerOver={(e) => {
         e.stopPropagation()
         setHovered(true)
-        AudioEngine.playHeartbeat(1.1)
       }}
       onPointerOut={() => {
         setHovered(false)
@@ -75,7 +74,7 @@ export default function InteractiveObject({ objData }) {
             padding: '6px 14px',
             background: isHighlighted ? 'rgba(220, 38, 38, 0.95)' : 'rgba(10, 14, 26, 0.9)',
             border: `2px solid ${isHighlighted ? '#ef4444' : glowColor}`,
-            borderRadius: '8px',
+            borderRadius: '4px',
             color: '#fff',
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: '12px',
@@ -91,7 +90,7 @@ export default function InteractiveObject({ objData }) {
             gap: '8px'
           }}
         >
-          <span>📜</span>
+          <span style={{ color: '#f59e0b', fontSize: '10px' }}>◆</span>
           <span>{objData.display_name || objData.filename}</span>
           {isHighlighted && (
             <span style={{
@@ -99,7 +98,7 @@ export default function InteractiveObject({ objData }) {
               color: '#fff',
               fontSize: '10px',
               padding: '2px 6px',
-              borderRadius: '4px',
+              borderRadius: '2px',
               fontWeight: 900
             }}>
               [E / CLICK]
