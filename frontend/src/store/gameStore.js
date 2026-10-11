@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { AudioEngine } from '../components/AudioEngine'
 
 const SCARE_TYPES = [
   'door_slam',
@@ -21,12 +22,12 @@ const loadSavedSettings = () => {
     console.warn("Could not load saved settings:", e)
   }
   return {
-    volume: 0.8,
+    volume: 0,
     brightness: 1.2,
     reduceScares: false,
-    enableSkeletonVoice: true,
+    enableSkeletonVoice: false,
     lowQuality: false,
-    isMuted: false
+    isMuted: true
   }
 }
 
@@ -85,12 +86,20 @@ export const useGameStore = create((set, get) => ({
   // Audio Context State
   audioUnlocked: false,
   isPointerLocked: false,
+  focusedObject: null, // Crosshair aimed object in 3D space
+
+  setFocusedObject: (obj) => set({ focusedObject: obj }),
+  interactFocusedObject: async () => {
+    const { focusedObject, checkObject, isGameOver } = get()
+    if (!focusedObject || isGameOver) return null
+    return await checkObject(focusedObject.id)
+  },
 
   // Settings & Accessibility
   brightness: initialSettings.brightness ?? 1.2,
   enableSkeletonVoice: initialSettings.enableSkeletonVoice ?? true,
-  volume: initialSettings.volume ?? 0.8,
-  isMuted: initialSettings.isMuted ?? false,
+  volume: 0,
+  isMuted: true,
   healthError: null,
   fallbackReason: null,
   activeSubtitle: null,
