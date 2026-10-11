@@ -41,7 +41,17 @@ export class ErrorBoundary extends React.Component {
             padding: '36px',
             boxShadow: '0 0 35px rgba(239, 68, 68, 0.3)'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💀 🕯️</div>
+            <div style={{
+              width: '60px',
+              height: '84px',
+              margin: '0 auto 16px auto',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              border: '1px solid #ef4444',
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
+            }}>
+              <img src="/assets/candle_extinguished.jpg" alt="Extinguished Candle" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h2 style={{
               fontFamily: 'Nosifer, Creepster, cursive',
               color: '#ef4444',
@@ -74,14 +84,15 @@ export class ErrorBoundary extends React.Component {
                 color: '#ffffff',
                 border: 'none',
                 padding: '12px 28px',
-                borderRadius: '8px',
-                fontSize: '1rem',
+                borderRadius: '4px',
+                fontSize: '0.9rem',
                 fontWeight: 'bold',
                 cursor: 'pointer',
+                letterSpacing: '1px',
                 boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)'
               }}
             >
-              🔄 AWAKEN & RELOAD
+              AWAKEN & RELOAD
             </button>
           </div>
         </div>
