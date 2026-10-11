@@ -13,6 +13,7 @@ import HauntingReportModal from './components/HauntingReportModal'
 import HorrorPostProcessing from './components/HorrorPostProcessing'
 import SubtitlesOverlay from './components/SubtitlesOverlay'
 import CandleLightRelicAnimation from './components/CandleLightRelicAnimation'
+import HorrorCinematicEffects from './components/HorrorCinematicEffects'
 import { AudioEngine } from './components/AudioEngine'
 import { useGameStore } from './store/gameStore'
 
@@ -172,6 +173,7 @@ export default function App() {
 
       {/* Shared Global Overlays & Post-Processing */}
       <HorrorPostProcessing />
+      <HorrorCinematicEffects />
       <SubtitlesOverlay />
       <CandleLightRelicAnimation />
       <HauntingReportModal />
