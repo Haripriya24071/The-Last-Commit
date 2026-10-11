@@ -15,7 +15,6 @@ export default function RoomHUD() {
     activeRelicModal,
     lowQuality,
     reduceScares,
-    warmth,
     hasRelicsRemaining,
     foundRelics,
     showReport,
@@ -28,12 +27,9 @@ export default function RoomHUD() {
     fetchReport,
     returnToMap,
     resetGame,
-    startNewRepo,
     role,
     brightness,
     setBrightness,
-    volume,
-    setVolume,
     isMuted,
     toggleMute,
     enableSkeletonVoice,
@@ -44,8 +40,21 @@ export default function RoomHUD() {
 
   const [showDrawer, setShowDrawer] = useState(false)
   const [showPauseMenu, setShowPauseMenu] = useState(false)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
-  // Escape key toggles in-game pause menu instead of abruptly quitting
+  // Track mouse coordinates for realistic carried candle swaying
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth - 0.5) * 2,
+        y: (e.clientY / window.innerHeight - 0.5) * 2
+      })
+    }
+    window.addEventListener('pointermove', handlePointerMove)
+    return () => window.removeEventListener('pointermove', handlePointerMove)
+  }, [])
+
+  // Escape key toggles pause menu
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
@@ -56,80 +65,84 @@ export default function RoomHUD() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Heartbeat sound loop driven by /api/warmth
-  useEffect(() => {
-    if (warmth <= 0.05 || !hasRelicsRemaining || isGameOver) return
-
-    // Interval shrinks as warmth approaches 1.0 (from 1600ms down to 350ms)
-    const intervalMs = Math.max(350, Math.round(1600 - warmth * 1250))
-    const timer = setInterval(() => {
-      AudioEngine.playHeartbeat(0.3 + warmth * 0.7)
-    }, intervalMs)
-
-    return () => clearInterval(timer)
-  }, [warmth, hasRelicsRemaining, isGameOver])
-
-  // Play audio and auto-dismiss 1-second jump scares
-  useEffect(() => {
-    if (activeScare) {
-      if (reduceScares) {
-        AudioEngine.playHeartbeat(1.0)
-      } else {
-        AudioEngine.playJumpScare(activeScare)
-      }
-
-      const timer = setTimeout(() => {
-        clearScare()
-      }, reduceScares ? 600 : 1100)
-
-      return () => clearTimeout(timer)
+  // Scare asset dictionary using the user's exact visual reference images
+  const scareVisualMap = {
+    door_slam: {
+      image: '/assets/portrait_hallway.jpg',
+      title: 'THE DOOR SLAMS SHUT',
+      subtitle: 'The corridor echoes with hollow footsteps.'
+    },
+    ghost_face: {
+      image: '/assets/ghost_character.jpg',
+      title: 'A VEILED PHANTOM LUNGES',
+      subtitle: 'The lady of the staircase whispers of dead code.'
+    },
+    lights_out: {
+      image: '/assets/candle_extinguished.jpg',
+      title: 'THE FLAME IS SNUFFED OUT',
+      subtitle: 'Cold darkness engulfs your vision.'
+    },
+    skeleton_pop: {
+      image: '/assets/skeleton_character.jpg',
+      title: 'THE ROOT BEAST AWAKENS',
+      subtitle: 'Rotting algorithmic tendrils surge forward.'
+    },
+    mirror_shatter: {
+      image: '/assets/repo_frame_staircase.jpg',
+      title: 'THE SHATTERED REFLECTION',
+      subtitle: 'The cursed frame cracks down the center.'
+    },
+    eerie_laughter: {
+      image: '/assets/reaper_character.jpg',
+      title: 'THE SHADOW REAPER DESCENDS',
+      subtitle: 'Tattered cowls billow through the mist.'
     }
-  }, [activeScare, reduceScares, clearScare])
+  }
 
-  // Play relic audio chime on discovery
-  useEffect(() => {
-    if (activeRelicModal) {
-      AudioEngine.playRelicFound()
-    }
-  }, [activeRelicModal])
+  const currentScareVisual = activeScare ? (scareVisualMap[activeScare] || scareVisualMap.lights_out) : null
 
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
-      
-      {/* 1. Top HUD Bar */}
+    <div style={{
+      position: 'absolute',
+      inset: 0,
+      pointerEvents: 'none',
+      zIndex: 20,
+      fontFamily: 'Inter, sans-serif',
+      color: '#e5e7eb'
+    }}>
+
+      {/* ========================================================
+          1. TOP NAVIGATION & STATUS BAR
+      ======================================================== */}
       <header style={{
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        padding: '16px 24px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'linear-gradient(to bottom, rgba(5,5,8,0.94), transparent)'
+        padding: '16px 24px',
+        zIndex: 22
       }}>
-        {/* Room Title & Return to Map Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', pointerEvents: 'auto' }}>
+        {/* Left: Return to Map & Chamber Identification */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
           <button
             onClick={returnToMap}
-            title="Return to Cursed Blueprint (Esc)"
             style={{
-              background: 'rgba(220, 38, 38, 0.25)',
-              border: '1px solid #ef4444',
-              color: '#fff',
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: 700,
+              background: 'rgba(12, 10, 18, 0.92)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              color: '#fca5a5',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 800,
               cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
+              fontFamily: 'JetBrains Mono, monospace',
+              letterSpacing: '1px'
             }}
           >
-            <span>🗺️</span>
-            <span>RETURN TO MAP (Esc)</span>
+            ← RETURN TO BLUEPRINT
           </button>
 
           <div>
@@ -148,66 +161,77 @@ export default function RoomHUD() {
                 background: 'rgba(239, 68, 68, 0.2)',
                 border: '1px solid rgba(239, 68, 68, 0.4)',
                 color: '#fca5a5',
-                fontSize: '10px',
-                padding: '1px 6px',
-                borderRadius: '4px',
+                fontSize: '9px',
+                padding: '2px 8px',
+                borderRadius: '2px',
                 fontFamily: 'JetBrains Mono, monospace',
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
+                fontWeight: 800
               }}>
                 {role}
               </span>
             </div>
             <p style={{ margin: '2px 0 0 0', color: '#9ca3af', fontSize: '11px' }}>
-              {roomData?.description || 'Search for hidden code defects.'}
+              {roomData?.description || 'Search the chamber for corrupted relics.'}
             </p>
           </div>
         </div>
 
-        {/* Lifelines (4 Candles), Lantern Visits, Score, Relics & Toggles */}
+        {/* Right: Visits, Real Image Candle Lifelines, Score, Controls */}
         <div style={{
           pointerEvents: 'auto',
           display: 'flex',
           alignItems: 'center',
           gap: '14px',
-          background: 'rgba(18, 16, 26, 0.9)',
-          padding: '8px 18px',
-          borderRadius: '9999px',
+          background: 'rgba(12, 10, 18, 0.94)',
+          padding: '6px 18px',
+          borderRadius: '6px',
           border: '1px solid rgba(255,255,255,0.1)',
           backdropFilter: 'blur(12px)'
         }}>
-          {/* Lantern Visits Left */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '10px', color: '#f59e0b', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>VISITS:</span>
+          {/* Lantern Infiltrations */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10px', color: '#f59e0b', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>VISITS:</span>
             {[0, 1, 2, 3].map((idx) => (
               <span
                 key={idx}
                 style={{
-                  fontSize: '14px',
-                  opacity: idx < lanternVisitsLeft ? 1 : 0.2,
-                  filter: idx < lanternVisitsLeft ? 'drop-shadow(0 0 5px #f59e0b)' : 'grayscale(1)'
+                  fontSize: '11px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontWeight: 900,
+                  color: idx < lanternVisitsLeft ? '#f59e0b' : '#334155',
+                  padding: '2px 5px',
+                  background: idx < lanternVisitsLeft ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: '2px'
                 }}
               >
-                🏮
+                {idx + 1}
               </span>
             ))}
           </div>
 
-          {/* Candles */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
-            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>CANDLES:</span>
+          {/* Candle Lifelines (Exact Reference Images 11 & 10) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>CANDLES:</span>
             {[0, 1, 2, 3].map((idx) => (
-              <span
+              <div
                 key={idx}
                 style={{
-                  fontSize: '16px',
-                  opacity: idx < lifelines ? 1 : 0.2,
-                  filter: idx < lifelines ? 'drop-shadow(0 0 6px rgba(245,158,11,0.9))' : 'grayscale(1)',
-                  transition: 'opacity 0.3s, transform 0.2s',
-                  transform: idx < lifelines ? 'scale(1)' : 'scale(0.85)'
+                  width: '16px',
+                  height: '24px',
+                  borderRadius: '2px',
+                  overflow: 'hidden',
+                  opacity: idx < lifelines ? 1 : 0.25,
+                  filter: idx < lifelines ? 'drop-shadow(0 0 4px #fbbf24)' : 'grayscale(1)',
+                  transition: 'all 0.3s'
                 }}
               >
-                🕯️
-              </span>
+                <img
+                  src={idx < lifelines ? '/assets/candle_returns.jpg' : '/assets/candle_extinguished.jpg'}
+                  alt="Candle Lifeline"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
             ))}
           </div>
 
@@ -219,19 +243,20 @@ export default function RoomHUD() {
               border: '1px solid rgba(56, 189, 248, 0.4)',
               color: '#38bdf8',
               padding: '4px 10px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '11px',
               cursor: 'pointer',
-              fontFamily: 'JetBrains Mono, monospace'
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 700
             }}
           >
-            ✨ RELICS: {foundRelics.length}
+            RELICS: {foundRelics.length}
           </button>
 
           {/* Score */}
           <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '10px' }}>
             <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>SCORE: </span>
-            <span style={{ fontSize: '14px', color: '#fbbf24', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '14px', color: '#fbbf24', fontWeight: 800, fontFamily: 'JetBrains Mono, monospace' }}>
               {score}
             </span>
           </div>
@@ -239,204 +264,209 @@ export default function RoomHUD() {
           {/* Skeleton Voice Toggle */}
           <button
             onClick={toggleSkeletonVoice}
-            title="Toggle Sarcastic Skeleton TTS Voice"
             style={{
-              background: enableSkeletonVoice ? '#7c2d12' : '#27272a',
-              color: '#fff',
-              border: 'none',
+              background: enableSkeletonVoice ? '#7c2d12' : '#1e1b2e',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 8px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace'
             }}
           >
-            {enableSkeletonVoice ? '🗣️ SKELETON VOICE ON' : '🔇 VOICE OFF'}
+            {enableSkeletonVoice ? 'VOICE: ON' : 'VOICE: OFF'}
           </button>
 
-          {/* Audio Mute Button */}
+          {/* Mute Toggle */}
           <button
             onClick={toggleMute}
-            title="Mute / Unmute Horror Audio"
             style={{
-              background: isMuted ? '#991b1b' : '#27272a',
-              color: '#fff',
-              border: 'none',
+              background: isMuted ? '#991b1b' : '#1e1b2e',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 8px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace'
             }}
           >
-            {isMuted ? '🔇 MUTED' : '🔊 SOUND ON'}
+            {isMuted ? 'MUTED' : 'AUDIO'}
           </button>
 
           {/* Brightness Adjuster */}
           <button
             onClick={() => setBrightness(brightness >= 1.6 ? 0.9 : brightness + 0.3)}
-            title="Cycle Room Brightness"
             style={{
-              background: '#27272a',
-              color: '#fff',
-              border: 'none',
+              background: '#1e1b2e',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 8px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace'
             }}
           >
-            💡 {brightness.toFixed(1)}x
+            LIGHT: {brightness.toFixed(1)}x
           </button>
 
-          {/* Reduce Scares Toggle */}
+          {/* Scare Intensity Toggle */}
           <button
             onClick={toggleReduceScares}
-            title="Toggle Mild Jump Scares"
             style={{
-              background: reduceScares ? '#065f46' : '#27272a',
-              color: '#fff',
-              border: 'none',
+              background: reduceScares ? '#065f46' : '#1e1b2e',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 8px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace'
             }}
           >
-            {reduceScares ? '🛡️ MILD SCARES' : '👻 FULL SCARES'}
+            {reduceScares ? 'MILD HORROR' : 'FULL HORROR'}
           </button>
 
-          {/* Fast 60FPS Quality Toggle */}
+          {/* Perf Quality Toggle */}
           <button
             onClick={toggleQuality}
             style={{
-              background: lowQuality ? '#78350f' : '#27272a',
-              color: '#fff',
-              border: 'none',
+              background: lowQuality ? '#78350f' : '#1e1b2e',
+              color: '#cbd5e1',
+              border: '1px solid rgba(255,255,255,0.1)',
               padding: '4px 8px',
-              borderRadius: '6px',
+              borderRadius: '4px',
               fontSize: '10px',
               cursor: 'pointer',
               fontFamily: 'JetBrains Mono, monospace'
             }}
           >
-            {lowQuality ? '⚡ FAST (60FPS)' : '✨ HIGH'}
+            {lowQuality ? 'PERF: 60FPS' : 'PERF: HIGH'}
           </button>
         </div>
       </header>
 
-      {/* 2. Permanent Wall Riddle Banner */}
+      {/* ========================================================
+          2. PERMANENT WALL RIDDLE BANNER
+      ======================================================== */}
       {roomData?.riddle && (
         <div style={{
           position: 'absolute',
           top: '76px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: 'rgba(15, 23, 42, 0.88)',
+          background: 'rgba(12, 10, 18, 0.92)',
           border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '8px',
-          padding: '6px 20px',
+          borderRadius: '4px',
+          padding: '8px 24px',
           textAlign: 'center',
           backdropFilter: 'blur(8px)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.85)'
         }}>
-          <span style={{ color: '#ef4444', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, letterSpacing: '1px' }}>
-            📜 RIDDLE ON THE WALL:
+          <span style={{ color: '#ef4444', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800, letterSpacing: '2px' }}>
+            [CRYPTIC INSCRIPTION ON MASONRY]
           </span>
-          <p style={{ margin: '2px 0 0 0', color: '#fca5a5', fontSize: '12px', fontStyle: 'italic' }}>
+          <p style={{ margin: '4px 0 0 0', color: '#fca5a5', fontSize: '13px', fontStyle: 'italic' }}>
             "{roomData.riddle}"
           </p>
         </div>
       )}
 
-      {/* 3. Dynamic Heartbeat Proximity Indicator */}
-      {warmth > 0.1 && hasRelicsRemaining && (
-        <div style={{
+      {/* ========================================================
+          3. DYNAMIC RETICLE / CROSSHAIR
+      ======================================================== */}
+      <div
+        style={{
           position: 'absolute',
-          top: '118px',
+          top: '50%',
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: focusedObject ? 'auto' : 'none',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(127, 29, 29, 0.7)',
-          border: '1px solid #ef4444',
-          borderRadius: '9999px',
-          padding: '3px 14px',
-          animation: 'candleFlicker 0.4s infinite'
-        }}>
-          <span style={{ fontSize: '13px' }}>💓</span>
-          <span style={{ fontSize: '10px', color: '#fecaca', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>
-            COLD CHILL NEARBY ({(warmth * 100).toFixed(0)}%)
-          </span>
-        </div>
-      )}
-
-      {/* 4. Dynamic Reticle / Crosshair */}
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: focusedObject ? 'auto' : 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        zIndex: 25,
-        cursor: focusedObject ? 'pointer' : 'default'
-      }}
-      onClick={() => {
-        if (focusedObject) interactFocusedObject()
-      }}
+          zIndex: 25,
+          cursor: focusedObject ? 'pointer' : 'default'
+        }}
+        onClick={() => {
+          if (focusedObject) interactFocusedObject()
+        }}
       >
         <div style={{
-          width: focusedObject ? '36px' : '10px',
-          height: focusedObject ? '36px' : '10px',
+          width: focusedObject ? '38px' : '10px',
+          height: focusedObject ? '38px' : '10px',
           border: `2px solid ${focusedObject ? '#ef4444' : 'rgba(255, 255, 255, 0.45)'}`,
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: focusedObject ? '0 0 20px #ef4444, inset 0 0 10px rgba(239, 68, 68, 0.5)' : 'none',
           transition: 'all 0.15s ease-out',
-          animation: focusedObject ? 'pulse 0.6s infinite' : 'none'
+          boxShadow: focusedObject ? '0 0 20px #ef4444' : 'none'
         }}>
-          <div style={{
-            width: '4px',
-            height: '4px',
-            background: focusedObject ? '#ef4444' : '#fff',
-            borderRadius: '50%'
-          }} />
+          {focusedObject ? (
+            <div style={{ width: '6px', height: '6px', background: '#ef4444', borderRadius: '50%' }} />
+          ) : (
+            <div style={{ width: '2px', height: '2px', background: '#fff', borderRadius: '50%' }} />
+          )}
         </div>
 
-        {/* Diegetic In-World Action Prompt */}
+        {/* Hover Prompt */}
         {focusedObject && (
           <div style={{
             marginTop: '12px',
-            padding: '6px 16px',
-            background: 'rgba(220, 38, 38, 0.95)',
-            border: '1px solid #fca5a5',
-            borderRadius: '8px',
-            color: '#fff',
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '12px',
-            fontWeight: 800,
-            letterSpacing: '0.5px',
-            boxShadow: '0 0 24px rgba(220, 38, 38, 0.8)',
+            background: 'rgba(12, 10, 18, 0.95)',
+            border: '1px solid #ef4444',
+            borderRadius: '4px',
+            padding: '6px 14px',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.9)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            animation: 'candleFlicker 1.5s infinite'
+            gap: '8px'
           }}>
-            <span>📜</span>
-            <span>[E / CLICK] CLEANSE: {focusedObject.display_name || focusedObject.filename}</span>
+            <span style={{ color: '#fbbf24', fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 800 }}>
+              [E / CLICK]
+            </span>
+            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+              EXAMINE: {focusedObject.display_name || focusedObject.filename}
+            </span>
           </div>
         )}
       </div>
 
-      {/* 5. Bottom Gameplay Controls Guide Banner */}
+      {/* ========================================================
+          4. CARRIED CANDLE FOREGROUND (Exact Reference Image 9)
+             Moves and sways smoothly with mouse cursor
+      ======================================================== */}
+      <div style={{
+        position: 'absolute',
+        bottom: '-25px',
+        right: '8%',
+        width: '320px',
+        height: '420px',
+        pointerEvents: 'none',
+        zIndex: 18,
+        transform: `translate(${mousePos.x * 22}px, ${mousePos.y * 14}px)`,
+        transition: 'transform 0.08s ease-out',
+        filter: lifelines > 0 ? 'drop-shadow(0 0 50px rgba(245, 158, 11, 0.45))' : 'grayscale(1) opacity(0.3)'
+      }}>
+        <img
+          src={lifelines > 0 ? "/assets/candle_carried.jpg" : "/assets/candle_extinguished.jpg"}
+          alt="Handheld Candle Flame"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            maskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 60%, black 50%, transparent 95%)'
+          }}
+        />
+      </div>
+
+      {/* ========================================================
+          5. BOTTOM CONTROLS HINT FOOTER
+      ======================================================== */}
       <footer style={{
         position: 'absolute',
         bottom: '16px',
@@ -444,40 +474,22 @@ export default function RoomHUD() {
         transform: 'translateX(-50%)',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px',
-        background: 'rgba(10, 8, 16, 0.85)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
-        padding: '8px 20px',
-        borderRadius: '9999px',
-        pointerEvents: 'auto',
+        gap: '14px',
+        background: 'rgba(12, 10, 18, 0.92)',
+        padding: '8px 22px',
+        borderRadius: '4px',
+        border: '1px solid rgba(255,255,255,0.08)',
         fontSize: '11px',
-        fontFamily: 'JetBrains Mono, monospace',
         color: '#9ca3af',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+        fontFamily: 'JetBrains Mono, monospace',
+        zIndex: 22,
+        pointerEvents: 'auto'
       }}>
-        <span><strong style={{ color: '#fff' }}>[WASD]</strong> Move</span>
+        <span><strong style={{ color: '#fff' }}>[W, A, S, D]</strong> Navigate</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <button
-          onClick={() => {
-            const canvas = document.querySelector('canvas')
-            if (canvas) canvas.requestPointerLock?.()
-          }}
-          style={{
-            background: isPointerLocked ? 'rgba(56, 189, 248, 0.2)' : 'rgba(239, 68, 68, 0.25)',
-            border: `1px solid ${isPointerLocked ? '#38bdf8' : '#ef4444'}`,
-            color: isPointerLocked ? '#38bdf8' : '#fca5a5',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '10px',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-        >
-          {isPointerLocked ? '🎯 MOUSE LOOK ACTIVE (ESC TO RELEASE)' : '🖱️ CLICK FOR MOUSE LOOK (OR DRAG)'}
-        </button>
+        <span style={{ color: '#38bdf8' }}>FREE CURSOR FLASHLIGHT (PAN TO EDGES TO TURN)</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
-        <span><strong style={{ color: '#f59e0b' }}>[E / CLICK]</strong> Inspect</span>
+        <span><strong style={{ color: '#f59e0b' }}>[E / CLICK]</strong> Inspect Relic</span>
         <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
         <button
           onClick={() => setShowPauseMenu(true)}
@@ -487,6 +499,7 @@ export default function RoomHUD() {
             color: '#cbd5e1',
             cursor: 'pointer',
             fontSize: '11px',
+            fontFamily: 'JetBrains Mono, monospace',
             textDecoration: 'underline'
           }}
         >
@@ -494,12 +507,14 @@ export default function RoomHUD() {
         </button>
       </footer>
 
-      {/* 6. Explicit Pause Menu Overlay (Only shown when user presses ESC or clicks Pause) */}
+      {/* ========================================================
+          6. IN-GAME PAUSE MENU OVERLAY (ESC)
+      ======================================================== */}
       {showPauseMenu && !isGameOver && !activeRelicModal && !activeScare && (
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(5, 5, 8, 0.82)',
+          background: 'rgba(4, 3, 6, 0.88)',
           backdropFilter: 'blur(10px)',
           display: 'flex',
           justifyContent: 'center',
@@ -508,27 +523,36 @@ export default function RoomHUD() {
           pointerEvents: 'auto'
         }}>
           <div style={{
-            background: 'rgba(18, 14, 28, 0.96)',
-            border: '2px solid rgba(239, 68, 68, 0.5)',
-            borderRadius: '16px',
-            padding: '32px 40px',
+            background: 'rgba(12, 10, 18, 0.96)',
+            border: '1px solid rgba(239, 68, 68, 0.5)',
+            borderRadius: '8px',
+            padding: '36px 44px',
             textAlign: 'center',
             maxWidth: '460px',
             width: '90%',
-            boxShadow: '0 0 50px rgba(0,0,0,0.9)'
+            boxShadow: '0 0 50px rgba(0,0,0,0.95)'
           }}>
-            <div style={{ fontSize: '36px', marginBottom: '8px' }}>⏸️🕯️</div>
+            <div style={{
+              width: '48px',
+              height: '68px',
+              margin: '0 auto 16px auto',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)'
+            }}>
+              <img src="/assets/candle_returns.jpg" alt="Lit Candle" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <h3 style={{
               fontFamily: 'Cinzel Decorative, serif',
               fontSize: '22px',
               color: '#ef4444',
-              margin: '0 0 6px 0',
+              margin: '0 0 8px 0',
               letterSpacing: '1px'
             }}>
               INVESTIGATION PAUSED
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '12px', margin: '0 0 24px 0' }}>
-              Your lantern light flickers in the silence of {roomData?.title || currentRoom}.
+            <p style={{ color: '#9ca3af', fontSize: '12px', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+              Your candle flickers in the eerie quiet of {roomData?.title || currentRoom}.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -539,14 +563,15 @@ export default function RoomHUD() {
                   background: '#dc2626',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  letterSpacing: '1px',
                   cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif'
                 }}
               >
-                ▶️ RESUME INVESTIGATION
+                RESUME INVESTIGATION
               </button>
 
               <button
@@ -556,25 +581,27 @@ export default function RoomHUD() {
                 }}
                 style={{
                   padding: '12px',
-                  background: 'rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   color: '#e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif'
                 }}
               >
-                🗺️ RETURN TO CURSED BLUEPRINT (Save Visit)
+                RETURN TO CURSED BLUEPRINT
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 6. 6 Distinct Jump Scares (1-second duration) */}
-      {activeScare && (
+      {/* ========================================================
+          7. JUMP SCARE MODAL (Exact Visual Artworks, Zero Emojis)
+      ======================================================== */}
+      {activeScare && currentScareVisual && (
         <div
           onClick={clearScare}
           style={{
@@ -587,59 +614,51 @@ export default function RoomHUD() {
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            animation: reduceScares ? 'none' : 'shakeScreen 0.15s infinite',
-            ...(activeScare === 'door_slam' && {
-              background: 'radial-gradient(circle, rgba(185,28,28,0.96) 0%, rgba(0,0,0,0.98) 75%)'
-            }),
-            ...(activeScare === 'ghost_face' && {
-              background: 'radial-gradient(circle, rgba(6,78,59,0.95) 0%, rgba(0,0,0,0.98) 75%)'
-            }),
-            ...(activeScare === 'lights_out' && {
-              background: 'rgba(0, 0, 0, 0.99)'
-            }),
-            ...(activeScare === 'skeleton_pop' && {
-              background: 'radial-gradient(circle, rgba(120,53,15,0.95) 0%, rgba(0,0,0,0.98) 75%)'
-            }),
-            ...(activeScare === 'mirror_shatter' && {
-              background: 'radial-gradient(circle, rgba(30,58,138,0.95) 0%, rgba(0,0,0,0.98) 75%)'
-            }),
-            ...(activeScare === 'eerie_laughter' && {
-              background: 'radial-gradient(circle, rgba(88,28,135,0.95) 0%, rgba(0,0,0,0.98) 75%)'
-            })
+            background: 'radial-gradient(circle, rgba(185,28,28,0.92) 0%, rgba(4,3,6,0.98) 75%)',
+            animation: reduceScares ? 'none' : 'shakeScreen 0.15s infinite'
           }}
         >
-          {/* Scare Visual Icon */}
-          <span style={{ fontSize: '110px', marginBottom: '12px', filter: 'drop-shadow(0 0 20px #ef4444)' }}>
-            {activeScare === 'door_slam' && '🚪💥'}
-            {activeScare === 'ghost_face' && '👻💀'}
-            {activeScare === 'lights_out' && '🕯️❌'}
-            {activeScare === 'skeleton_pop' && '🦴💀'}
-            {activeScare === 'mirror_shatter' && '🪞⚡'}
-            {activeScare === 'eerie_laughter' && '😈🦇'}
-          </span>
+          {/* Exact Artwork Asset Display */}
+          <div style={{
+            width: '260px',
+            height: '260px',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border: '3px solid #ef4444',
+            marginBottom: '20px',
+            boxShadow: '0 0 50px rgba(239, 68, 68, 0.8)',
+            transform: 'scale(1.05)'
+          }}>
+            <img
+              src={currentScareVisual.image}
+              alt="Nightmare Apparition"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
 
           <h1 style={{
             fontFamily: 'Creepster, cursive',
-            fontSize: '52px',
+            fontSize: '48px',
             color: '#fff',
             letterSpacing: '3px',
             textShadow: '0 0 24px #ef4444',
-            margin: 0
+            margin: 0,
+            textAlign: 'center'
           }}>
-            {activeScare === 'door_slam' && 'DOOR SLAMS SHUT!'}
-            {activeScare === 'ghost_face' && 'A PHANTOM LUNGES!'}
-            {activeScare === 'lights_out' && 'THE FLAME DIES!'}
-            {activeScare === 'skeleton_pop' && 'SKELETON IN THE CODE!'}
-            {activeScare === 'mirror_shatter' && 'THE MIRROR SHATTERS!'}
-            {activeScare === 'eerie_laughter' && 'DEMONIC LAUGHTER!'}
+            {currentScareVisual.title}
           </h1>
-          <p style={{ color: '#fca5a5', fontSize: '16px', marginTop: '10px' }}>
-            DECOY TRIGGERED! 1 candle was snuffed out ({lifelines} left).
+          <p style={{ color: '#fca5a5', fontSize: '15px', marginTop: '10px', textAlign: 'center' }}>
+            DECOY TRIGGERED! 1 candle was snuffed out ({lifelines} flame{lifelines === 1 ? '' : 's'} remaining).
           </p>
+          <span style={{ color: '#9ca3af', fontSize: '11px', marginTop: '16px', fontFamily: 'JetBrains Mono, monospace' }}>
+            [CLICK SCREEN TO DISMISS]
+          </span>
         </div>
       )}
 
-      {/* 7. Relic Discovered Modal */}
+      {/* ========================================================
+          8. RELIC DISCOVERED MODAL
+      ======================================================== */}
       {activeRelicModal && (
         <div
           onClick={clearRelicModal}
@@ -647,7 +666,7 @@ export default function RoomHUD() {
             pointerEvents: 'auto',
             position: 'absolute',
             inset: 0,
-            background: 'rgba(5, 5, 8, 0.88)',
+            background: 'rgba(4, 3, 6, 0.88)',
             backdropFilter: 'blur(12px)',
             display: 'flex',
             justifyContent: 'center',
@@ -658,22 +677,29 @@ export default function RoomHUD() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#0f172a',
+              background: '#090d16',
               border: '2px solid #38bdf8',
-              borderRadius: '16px',
+              borderRadius: '8px',
               padding: '30px',
-              maxWidth: '560px',
+              maxWidth: '580px',
               width: '90%',
               boxShadow: '0 0 40px rgba(56, 189, 248, 0.4)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '32px' }}>✨</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', borderBottom: '1px solid rgba(56, 189, 248, 0.2)', paddingBottom: '14px' }}>
+              <div style={{
+                width: '36px',
+                height: '48px',
+                borderRadius: '2px',
+                overflow: 'hidden'
+              }}>
+                <img src="/assets/candle_returns.jpg" alt="Relic Cleansed" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
               <div>
-                <h3 style={{ margin: 0, fontFamily: 'Cinzel Decorative, serif', fontSize: '19px', color: '#38bdf8' }}>
+                <h3 style={{ margin: 0, fontFamily: 'Cinzel Decorative, serif', fontSize: '18px', color: '#38bdf8', letterSpacing: '1px' }}>
                   CORRUPTED RELIC PURGED (+100 PTS)
                 </h3>
-                <span style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
                   {activeRelicModal.file}:{activeRelicModal.line} • {activeRelicModal.type}
                 </span>
               </div>
@@ -684,51 +710,55 @@ export default function RoomHUD() {
               margin: '18px 0',
               background: '#020617',
               border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px',
+              borderRadius: '4px',
               padding: '12px 16px',
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '13px',
+              fontSize: '12px',
               color: '#f87171'
             }}>
               <code>{activeRelicModal.snippet}</code>
             </div>
 
-            {/* Explanation & Fix Suggestion */}
+            {/* Explanation & Fix */}
             <p style={{ color: '#cbd5e1', fontSize: '13px', lineHeight: 1.5, margin: '0 0 10px 0' }}>
-              <strong>Why:</strong> {activeRelicModal.explanation}
+              <strong style={{ color: '#ef4444' }}>Vulnerability:</strong> {activeRelicModal.explanation}
             </p>
             <p style={{ color: '#86efac', fontSize: '13px', margin: 0 }}>
-              <strong>Fix:</strong> {activeRelicModal.suggestion}
+              <strong style={{ color: '#4ade80' }}>Remediation:</strong> {activeRelicModal.suggestion}
             </p>
 
             <button
               onClick={clearRelicModal}
               style={{
-                marginTop: '22px',
+                marginTop: '24px',
                 width: '100%',
                 padding: '12px',
                 background: '#0284c7',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: 'pointer'
+                borderRadius: '4px',
+                fontWeight: 700,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif'
               }}
             >
-              Continue Code Hunt
+              RESUME CODE HUNT
             </button>
           </div>
         </div>
       )}
 
-      {/* 8. Soft Ending Screen (Game Over / Candles or Visits Depleted) */}
+      {/* ========================================================
+          9. GAME OVER / EXTINCTION SCREEN
+      ======================================================== */}
       {isGameOver && (
         <div
           style={{
             pointerEvents: 'auto',
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(circle, rgba(30,10,10,0.98) 0%, rgba(0,0,0,0.99) 90%)',
+            background: 'radial-gradient(circle, rgba(30,10,10,0.98) 0%, rgba(4,3,6,0.99) 90%)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -736,7 +766,19 @@ export default function RoomHUD() {
             zIndex: 60
           }}
         >
-          <span style={{ fontSize: '70px', marginBottom: '16px' }}>💀🕯️</span>
+          {/* Large Extinguished Candle Art */}
+          <div style={{
+            width: '180px',
+            height: '240px',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            border: '2px solid #ef4444',
+            marginBottom: '20px',
+            boxShadow: '0 0 40px rgba(239, 68, 68, 0.4)'
+          }}>
+            <img src="/assets/candle_extinguished.jpg" alt="Snuffed Candle" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+
           <h1 style={{
             fontFamily: 'Creepster, cursive',
             fontSize: '52px',
@@ -747,21 +789,21 @@ export default function RoomHUD() {
           }}>
             THE HOUSE WINS THIS TIME
           </h1>
-          <p style={{ color: '#d1d5db', fontSize: '16px', marginTop: '12px', maxWidth: '480px', textAlign: 'center' }}>
+          <p style={{ color: '#d1d5db', fontSize: '15px', marginTop: '10px', maxWidth: '480px', textAlign: 'center' }}>
             {lifelines <= 0
-              ? 'All four candles were snuffed out by decoys in the dark.'
-              : 'Lantern oil depleted! No visits remaining to explore the rooms.'}
+              ? 'All four candle flames were snuffed out by decoys in the dark.'
+              : 'Lantern oil depleted! No visits remaining to enter the chambers.'}
           </p>
 
           <div style={{
             margin: '24px 0',
-            background: 'rgba(18, 16, 26, 0.8)',
+            background: 'rgba(12, 10, 18, 0.9)',
             border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '12px',
-            padding: '16px 32px',
+            borderRadius: '4px',
+            padding: '14px 28px',
             textAlign: 'center'
           }}>
-            <p style={{ margin: 0, fontSize: '14px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>
               RELICS CLEANSED: <strong style={{ color: '#38bdf8' }}>{foundRelics.length}</strong> • FINAL SCORE: <strong style={{ color: '#fbbf24' }}>{score}</strong>
             </p>
           </div>
@@ -777,34 +819,38 @@ export default function RoomHUD() {
                 background: '#dc2626',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 700,
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 800,
+                letterSpacing: '1px',
                 cursor: 'pointer'
               }}
             >
-              🔄 Re-light Candles & Retry
+              RE-LIGHT CANDLES & RETRY
             </button>
             <button
               onClick={fetchReport}
               style={{
                 padding: '12px 28px',
-                background: '#334155',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
+                background: '#1e293b',
+                color: '#cbd5e1',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '1px',
                 cursor: 'pointer'
               }}
             >
-              📜 View Haunting Report
+              VIEW HAUNTING REPORT
             </button>
           </div>
         </div>
       )}
 
-      {/* 9. Found Relics Slide-Out Drawer */}
+      {/* ========================================================
+          10. FOUND RELICS DRAWER
+      ======================================================== */}
       {showDrawer && (
         <div
           onClick={() => setShowDrawer(false)}
@@ -812,7 +858,7 @@ export default function RoomHUD() {
             pointerEvents: 'auto',
             position: 'absolute',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
+            background: 'rgba(0,0,0,0.65)',
             zIndex: 35,
             display: 'flex',
             justifyContent: 'flex-end'
@@ -829,28 +875,28 @@ export default function RoomHUD() {
               overflowY: 'auto'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#38bdf8', fontFamily: 'Cinzel Decorative, serif', fontSize: '18px' }}>
-                ✨ CLEANSED RELICS ({foundRelics.length})
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
+              <h3 style={{ margin: 0, color: '#38bdf8', fontFamily: 'Cinzel Decorative, serif', fontSize: '18px', letterSpacing: '1px' }}>
+                CLEANSED RELICS ({foundRelics.length})
               </h3>
               <button
                 onClick={() => setShowDrawer(false)}
-                style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: '14px', cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace' }}
               >
-                ✕
+                [CLOSE]
               </button>
             </div>
 
             {foundRelics.length === 0 ? (
               <p style={{ color: '#6b7280', fontSize: '13px', fontStyle: 'italic' }}>
-                No relics discovered yet. Explore the room and inspect suspicious objects.
+                No relics discovered yet. Explore the chamber and inspect suspicious objects.
               </p>
             ) : (
               foundRelics.map((r, i) => (
                 <div key={i} style={{
                   background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                   padding: '12px',
                   marginBottom: '12px'
                 }}>
@@ -870,7 +916,9 @@ export default function RoomHUD() {
         </div>
       )}
 
-      {/* 10. Comprehensive Haunting Report Modal */}
+      {/* ========================================================
+          11. HAUNTING REPORT MODAL
+      ======================================================== */}
       {showReport && hauntingReport && (
         <div
           onClick={closeReport}
@@ -878,7 +926,7 @@ export default function RoomHUD() {
             pointerEvents: 'auto',
             position: 'absolute',
             inset: 0,
-            background: 'rgba(5, 5, 8, 0.94)',
+            background: 'rgba(4, 3, 6, 0.94)',
             backdropFilter: 'blur(16px)',
             display: 'flex',
             justifyContent: 'center',
@@ -891,17 +939,25 @@ export default function RoomHUD() {
             style={{
               background: '#090d16',
               border: '2px solid #ef4444',
-              borderRadius: '16px',
-              padding: '32px',
+              borderRadius: '8px',
+              padding: '36px',
               maxWidth: '680px',
               width: '90%',
               maxHeight: '85vh',
               overflowY: 'auto'
             }}
           >
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '36px' }}>📜👑</span>
-              <h2 style={{ margin: '8px 0 0 0', fontFamily: 'Cinzel Decorative, serif', color: '#ef4444', fontSize: '24px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                width: '60px',
+                height: '84px',
+                margin: '0 auto 12px auto',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <img src="/assets/candle_returns.jpg" alt="Manor Seal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <h2 style={{ margin: '8px 0 0 0', fontFamily: 'Cinzel Decorative, serif', color: '#ef4444', fontSize: '24px', letterSpacing: '2px' }}>
                 HAUNTING REPORT
               </h2>
               <h3 style={{ color: '#fbbf24', fontSize: '18px', margin: '6px 0 0 0' }}>
@@ -919,32 +975,32 @@ export default function RoomHUD() {
               margin: '20px 0',
               textAlign: 'center'
             }}>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>TOTAL RELICS</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#38bdf8' }}>{hauntingReport.total_relics_in_mansion}</div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>TOTAL RELICS</div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#38bdf8' }}>{hauntingReport.total_relics_in_mansion}</div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>CLEANSED</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#4ade80' }}>{hauntingReport.relics_found_count}</div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>CLEANSED</div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#4ade80' }}>{hauntingReport.relics_found_count}</div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11px', color: '#9ca3af' }}>FINAL SCORE</div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#fbbf24' }}>{hauntingReport.score}</div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', padding: '12px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'JetBrains Mono, monospace' }}>FINAL SCORE</div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: '#fbbf24' }}>{hauntingReport.score}</div>
               </div>
             </div>
 
-            {/* Revealed Missed Relics after game finishes */}
+            {/* Revealed Missed Relics */}
             {hauntingReport.is_game_finished && hauntingReport.relics_missed && hauntingReport.relics_missed.length > 0 && (
               <div style={{ marginTop: '20px' }}>
-                <h4 style={{ color: '#f87171', fontSize: '14px', fontFamily: 'JetBrains Mono, monospace' }}>
-                  👻 LURKING SPIRITS MISSED ({hauntingReport.relics_missed.length}):
+                <h4 style={{ color: '#f87171', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px' }}>
+                  UNRESOLVED ANOMALIES IN THE REPOSITORY ({hauntingReport.relics_missed.length}):
                 </h4>
                 <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                   {hauntingReport.relics_missed.map((m, idx) => (
                     <div key={idx} style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
+                      background: 'rgba(239, 68, 68, 0.08)',
                       border: '1px solid rgba(239, 68, 68, 0.25)',
-                      borderRadius: '6px',
+                      borderRadius: '4px',
                       padding: '10px',
                       marginBottom: '8px'
                     }}>
@@ -964,17 +1020,18 @@ export default function RoomHUD() {
               onClick={closeReport}
               style={{
                 width: '100%',
-                marginTop: '20px',
+                marginTop: '24px',
                 padding: '12px',
                 background: '#dc2626',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
-                fontWeight: 700,
+                borderRadius: '4px',
+                fontWeight: 800,
+                letterSpacing: '1px',
                 cursor: 'pointer'
               }}
             >
-              Close Report
+              CLOSE REPORT
             </button>
           </div>
         </div>
@@ -982,5 +1039,3 @@ export default function RoomHUD() {
     </div>
   )
 }
-
-
