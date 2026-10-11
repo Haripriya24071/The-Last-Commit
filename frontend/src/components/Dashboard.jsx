@@ -31,7 +31,15 @@ export default function Dashboard({ onEnter }) {
         boxShadow: '0 10px 35px rgba(0,0,0,0.85)',
         backdropFilter: 'blur(12px)'
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '12px' }}>📊🏰</div>
+        <div style={{
+          width: '54px',
+          height: '76px',
+          margin: '0 auto 16px auto',
+          borderRadius: '4px',
+          overflow: 'hidden'
+        }}>
+          <img src="/assets/candle_returns.jpg" alt="Estate Seal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
         <h2 style={{
           fontFamily: 'Cinzel Decorative, serif',
           fontSize: '26px',
