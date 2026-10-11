@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
 export default function LandingScreen() {
@@ -9,18 +9,17 @@ export default function LandingScreen() {
   const [nameInput, setNameInput] = useState(playerName || '')
   const [matchStruck, setMatchStruck] = useState(false)
 
-  // Handle clicking the match to trigger blood spill wipe
   const handleStrikeMatch = () => {
     if (matchStruck) return
     setMatchStruck(true)
 
-    // Trigger dramatic blood spill transition after 400ms flare
+    // Trigger blood spill transition
     setTimeout(() => {
       setStage('blood_spill')
       setTimeout(() => {
         setStage('letter_scene')
-      }, 1600)
-    }, 450)
+      }, 1500)
+    }, 400)
   }
 
   const handleProceedToGates = () => {
@@ -42,8 +41,8 @@ export default function LandingScreen() {
     }}>
 
       {/* ========================================================
-          STAGE 1: Title & Match Strike (Reference Image 2)
-          "Are You Afraid of the Dark?"
+          STAGE 1: Exact Reference Image 2 — Title / Sudden Flash Screen
+          "Are You Afraid of the Dark?" with lit match
       ======================================================== */}
       {stage === 'match_flash' && (
         <div
@@ -56,113 +55,63 @@ export default function LandingScreen() {
             justifyContent: 'center',
             alignItems: 'center',
             cursor: 'pointer',
-            background: 'radial-gradient(circle at 50% 60%, #150a06 0%, #060305 60%, #000 100%)',
-            transition: 'filter 0.4s'
+            background: '#000'
           }}
         >
-          {/* Subtle Ambient Fog Layer */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 60%)',
-            animation: 'candleFlicker 3s infinite ease-in-out'
-          }} />
-
-          {/* Title from Reference Image 2 */}
-          <div style={{ textAlign: 'center', zIndex: 10, marginBottom: '24px' }}>
-            <h1 style={{
-              fontFamily: 'Cinzel Decorative, serif',
-              fontSize: '44px',
-              fontWeight: 900,
-              color: '#f59e0b',
-              margin: '0 0 6px 0',
-              letterSpacing: '3px',
-              textShadow: '0 0 35px rgba(245, 158, 11, 0.7), 0 0 60px rgba(220, 38, 38, 0.5)',
-              transform: matchStruck ? 'scale(1.08)' : 'scale(1.0)',
-              transition: 'transform 0.4s ease'
-            }}>
-              Are You Afraid of the Dark?
-            </h1>
-            <p style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '13px',
-              color: '#d97706',
-              letterSpacing: '4px',
-              textTransform: 'uppercase',
-              margin: 0
-            }}>
-              THE CODEBASE HAS A MEMORY
-            </p>
-          </div>
-
-          {/* The Hand Cupping the Burning Match (Reference Image 2) */}
+          {/* Exact Reference Image 2 Centerpiece */}
           <div style={{
             position: 'relative',
-            width: '280px',
-            height: '280px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            animation: matchStruck ? 'none' : 'matchGlow 2.5s infinite ease-in-out'
+            maxWidth: '820px',
+            width: '90%',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: matchStruck
+              ? '0 0 120px rgba(245, 158, 11, 0.9), 0 0 80px rgba(220, 38, 38, 0.7)'
+              : '0 0 60px rgba(0, 0, 0, 0.95), 0 0 30px rgba(245, 158, 11, 0.3)',
+            transform: matchStruck ? 'scale(1.04)' : 'scale(1.0)',
+            transition: 'all 0.35s ease-out'
           }}>
-            {/* Matchstick Head & Flame Graphic */}
-            <div style={{
-              width: '18px',
-              height: '38px',
-              background: 'radial-gradient(ellipse at 50% 80%, #ffffff 0%, #fbbf24 35%, #ef4444 80%, transparent 100%)',
-              borderRadius: '50% 50% 35% 35%',
-              filter: 'drop-shadow(0 0 20px #f59e0b) drop-shadow(0 0 45px #ef4444)',
-              transform: matchStruck ? 'scale(2.2)' : 'scale(1.0)',
-              transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              marginBottom: '-4px'
-            }} />
+            <img
+              src="/assets/title_match_dark.jpg"
+              alt="Are You Afraid of the Dark?"
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                filter: matchStruck ? 'brightness(1.3) contrast(1.2)' : 'brightness(0.95)'
+              }}
+            />
 
-            {/* Wooden Match Stick */}
+            {/* Pulsing Ember Glow Overlay */}
             <div style={{
-              width: '5px',
-              height: '55px',
-              background: 'linear-gradient(to bottom, #451a03, #78350f)',
-              borderRadius: '2px',
-              boxShadow: '0 0 10px rgba(0,0,0,0.8)'
+              position: 'absolute',
+              inset: 0,
+              boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.8)',
+              pointerEvents: 'none'
             }} />
-
-            {/* Hand Silhouette Graphic beneath match */}
-            <div style={{
-              fontSize: '48px',
-              marginTop: '-16px',
-              filter: 'drop-shadow(0 0 15px rgba(245, 158, 11, 0.4))'
-            }}>
-              🖐️
-            </div>
           </div>
 
-          {/* Action Prompt */}
+          {/* Minimal Action Prompt (Zero Emojis) */}
           <div style={{
-            marginTop: '36px',
-            padding: '10px 24px',
-            background: 'rgba(24, 16, 28, 0.75)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
-            borderRadius: '9999px',
-            color: '#fde68a',
+            marginTop: '28px',
+            padding: '12px 32px',
+            background: 'rgba(18, 12, 8, 0.85)',
+            border: '1px solid rgba(245, 158, 11, 0.5)',
+            borderRadius: '4px',
+            color: '#fef3c7',
             fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '12px',
-            letterSpacing: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)'
+            fontSize: '11px',
+            letterSpacing: '3px',
+            textTransform: 'uppercase',
+            boxShadow: '0 0 25px rgba(245, 158, 11, 0.25)'
           }}>
-            <span>🔥</span>
-            <span>STRIKE THE MATCH TO AWAKEN THE HOUSE</span>
+            CLICK TO STRIKE THE FLAME
           </div>
         </div>
       )}
 
-
       {/* ========================================================
-          STAGE 2: Blood Spill Transition (User's Exact Directive)
-          "after candle a big blood spills on screen cover screen"
+          STAGE 2: Blood Spill Transition
       ======================================================== */}
       {stage === 'blood_spill' && (
         <div style={{
@@ -174,9 +123,8 @@ export default function LandingScreen() {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          animation: 'bloodDripWipe 1.6s cubic-bezier(0.77, 0, 0.175, 1) forwards'
+          animation: 'bloodDripWipe 1.5s cubic-bezier(0.77, 0, 0.175, 1) forwards'
         }}>
-          {/* Organic Blood Flow Drips */}
           <div style={{
             position: 'absolute',
             top: 0,
@@ -186,26 +134,24 @@ export default function LandingScreen() {
             background: 'linear-gradient(to bottom, #7f1d1d, #450a0a, #030205)',
             clipPath: 'polygon(0% 0%, 100% 0%, 100% 85%, 80% 98%, 60% 82%, 40% 95%, 20% 86%, 0% 92%)'
           }} />
-
           <h2 style={{
             position: 'relative',
             zIndex: 10,
             fontFamily: 'Cinzel Decorative, serif',
-            fontSize: '42px',
+            fontSize: '38px',
             color: '#fecaca',
             letterSpacing: '5px',
-            textShadow: '0 0 30px #ef4444',
+            textShadow: '0 0 35px #ef4444',
             margin: 0
           }}>
-            THE HOUSE REMEMBERS
+            THE HOUSE CALLS
           </h2>
         </div>
       )}
 
-
       {/* ========================================================
-          STAGE 3: Bloodstained Floorboard Letter & Key (Reference Image 3)
-          "Now, you must find her." + Broken Typewriter Name Entry
+          STAGE 3: Exact Reference Image 3 — Name-Entry Clue & Letter
+          Bloodstained note "Now, you must find her." and antique key
       ======================================================== */}
       {stage === 'letter_scene' && (
         <div style={{
@@ -215,152 +161,103 @@ export default function LandingScreen() {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'radial-gradient(circle at 50% 30%, #171c26 0%, #0a0e17 50%, #030408 100%)',
-          padding: '24px',
+          background: '#040306',
+          padding: '20px',
           boxSizing: 'border-box'
         }}>
-          {/* Moonlit Misty Window in Background (Reference Image 3) */}
-          <div style={{
-            position: 'absolute',
-            top: '30px',
-            width: '140px',
-            height: '180px',
-            border: '8px solid #1e293b',
-            borderRadius: '4px',
-            background: 'radial-gradient(circle at 50% 50%, #94a3b8 0%, #334155 70%, #0f172a 100%)',
-            boxShadow: '0 0 80px rgba(148, 163, 184, 0.35)',
-            opacity: 0.6,
-            pointerEvents: 'none'
-          }}>
-            {/* Window crossbars */}
-            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '4px', background: '#1e293b' }} />
-            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '4px', background: '#1e293b' }} />
-          </div>
-
-          {/* Decaying Wooden Floorboards Base */}
+          {/* Exact Reference Image 3 Embedded Directly */}
           <div style={{
             position: 'relative',
-            zIndex: 10,
-            maxWidth: '680px',
+            maxWidth: '580px',
             width: '100%',
-            background: 'rgba(16, 12, 22, 0.95)',
-            border: '2px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '16px',
-            padding: '36px 44px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.95), 0 0 40px rgba(239, 68, 68, 0.2)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center'
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 80px rgba(0,0,0,0.98), 0 0 40px rgba(239, 68, 68, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
-
-            {/* Antique Iron Skeleton Key Icon (Reference Image 3) */}
-            <div style={{
-              fontSize: '44px',
-              marginBottom: '10px',
-              filter: 'drop-shadow(0 0 16px rgba(245, 158, 11, 0.5))'
-            }}>
-              🗝️
-            </div>
-
-            {/* Bloodstained Letter Note from Reference Image 3 */}
-            <div style={{
-              background: '#f8fafc',
-              backgroundImage: 'radial-gradient(circle at 75% 25%, #fecaca 0%, #fef08a 40%, #e2e8f0 100%)',
-              color: '#0f172a',
-              padding: '24px 36px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
-              transform: 'rotate(-1.5deg)',
-              marginBottom: '28px',
-              maxWidth: '480px',
-              width: '100%'
-            }}>
-              <p style={{
-                fontFamily: 'Cinzel Decorative, serif',
-                fontSize: '24px',
-                fontWeight: 900,
-                color: '#7f1d1d',
-                fontStyle: 'italic',
-                margin: '0 0 6px 0',
-                letterSpacing: '1px'
-              }}>
-                "Now, you must find her."
-              </p>
-              <span style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '11px',
-                color: '#64748b'
-              }}>
-                — A message left beside the iron key on the wet floorboards.
-              </span>
-            </div>
-
-            {/* Broken Typewriter Name Entry Input */}
-            <label style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '12px',
-              color: '#f87171',
-              letterSpacing: '2px',
-              marginBottom: '10px',
-              fontWeight: 700
-            }}>
-              WHO DARES TO ENTER? INSCRIBE YOUR NAME:
-            </label>
-
-            <input
-              type="text"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Enter Investigator Name..."
-              maxLength={24}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleProceedToGates()
-              }}
+            <img
+              src="/assets/name_entry_letter.jpg"
+              alt="Now, you must find her. - Clue Letter and Key"
               style={{
                 width: '100%',
-                maxWidth: '380px',
-                padding: '14px 20px',
-                background: '#0a0812',
-                border: '2px solid rgba(239, 68, 68, 0.5)',
-                borderRadius: '8px',
-                color: '#fff',
-                fontFamily: 'Cinzel Decorative, serif',
-                fontSize: '18px',
-                textAlign: 'center',
-                letterSpacing: '2px',
-                outline: 'none',
-                boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.8), 0 0 15px rgba(239, 68, 68, 0.25)',
-                marginBottom: '24px'
+                height: 'auto',
+                display: 'block'
               }}
             />
 
-            {/* Pick Up Key Button */}
-            <button
-              onClick={handleProceedToGates}
-              style={{
-                padding: '14px 36px',
-                background: '#dc2626',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '14px',
-                fontWeight: 800,
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                boxShadow: '0 0 25px rgba(220, 38, 38, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>🗝️</span>
-              <span>TAKE THE KEY & ENTER THE GATES</span>
-            </button>
+            {/* In-Scene Interactive Name Inscription Panel over the floorboards */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'linear-gradient(to top, rgba(3, 2, 6, 0.96) 0%, rgba(3, 2, 6, 0.85) 75%, transparent 100%)',
+              padding: '24px 28px 20px 28px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}>
+              <span style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: '11px',
+                color: '#f87171',
+                letterSpacing: '2px',
+                marginBottom: '10px',
+                fontWeight: 700
+              }}>
+                INSCRIBE YOUR INVESTIGATOR NAME
+              </span>
+
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Type your name..."
+                maxLength={24}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleProceedToGates()
+                }}
+                style={{
+                  width: '100%',
+                  maxWidth: '360px',
+                  padding: '12px 18px',
+                  background: 'rgba(10, 8, 14, 0.95)',
+                  border: '1px solid rgba(239, 68, 68, 0.6)',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  fontFamily: 'Cinzel Decorative, serif',
+                  fontSize: '18px',
+                  textAlign: 'center',
+                  letterSpacing: '2px',
+                  outline: 'none',
+                  boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(239, 68, 68, 0.3)',
+                  marginBottom: '16px'
+                }}
+              />
+
+              <button
+                onClick={handleProceedToGates}
+                style={{
+                  padding: '12px 32px',
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 25px rgba(220, 38, 38, 0.7)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                PICK UP THE KEY & ENTER GATES
+              </button>
+            </div>
           </div>
         </div>
       )}
