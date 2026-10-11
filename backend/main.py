@@ -161,6 +161,7 @@ class WarmthResponse(BaseModel):
 
 
 class CheckResponse(BaseModel):
+    is_valid: Optional[bool] = True
     is_real: Optional[bool] = False
     is_relic: Optional[bool] = False
     object_id: Optional[str] = None
