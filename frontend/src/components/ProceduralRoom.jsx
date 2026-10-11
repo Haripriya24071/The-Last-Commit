@@ -8,6 +8,20 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
   const torchLight2 = useRef()
   const dustParticlesRef = useRef()
   const lowQuality = useGameStore((state) => state.lowQuality)
+  const currentRoom = useGameStore((state) => state.currentRoom)
+
+  const roomWallArt = {
+    library: '/assets/library_room.jpg',
+    attic: '/assets/attic_room.jpg',
+    study: '/assets/study_room_1.jpg',
+    cellar: '/assets/portrait_hallway.jpg',
+    chapel: '/assets/mansion_entrance.jpg'
+  }
+  const wallTexturePath = roomWallArt[currentRoom] || '/assets/library_room.jpg'
+
+  const northTexture = useMemo(() => new THREE.TextureLoader().load(wallTexturePath), [wallTexturePath])
+  const westTexture = useMemo(() => new THREE.TextureLoader().load('/assets/portrait_hallway.jpg'), [])
+  const eastTexture = useMemo(() => new THREE.TextureLoader().load('/assets/study_room_2.jpg'), [])
 
   // Atmospheric dust motes / spectral embers
   const particleCount = lowQuality ? 30 : 90
@@ -82,6 +96,24 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
       <mesh position={[7, 3, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow={!lowQuality}>
         <boxGeometry args={[14, 6, 0.4]} />
         <meshStandardMaterial color="#0b0912" roughness={0.9} />
+      </mesh>
+
+      {/* Chamber Master Feature Mural (North Wall - Exact Reference Image) */}
+      <mesh position={[0, 3.2, -6.75]}>
+        <planeGeometry args={[11, 4.8]} />
+        <meshStandardMaterial map={northTexture} roughness={0.6} />
+      </mesh>
+
+      {/* West Wall Portrait Hallway Feature (Exact Reference Image 12) */}
+      <mesh position={[-6.75, 3.2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[9, 4.5]} />
+        <meshStandardMaterial map={westTexture} roughness={0.6} />
+      </mesh>
+
+      {/* East Wall Study Art Feature (Exact Reference Image 16) */}
+      <mesh position={[6.75, 3.2, 0]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[9, 4.5]} />
+        <meshStandardMaterial map={eastTexture} roughness={0.6} />
       </mesh>
 
       {/* 3. Wainscoting Wood Paneling Lower Trim */}
