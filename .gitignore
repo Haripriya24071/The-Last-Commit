@@ -40,3 +40,11 @@ cache/
 # Internal project tracking
 PROJECT_TRACKER.md
 
+frontend/public/**/*.jpg
+frontend/public/**/*.jpeg
+frontend/public/**/*.png
+frontend/public/**/*.mp4
+
+vite.config.js.timestamp-*
+backend/extract_assets.py
+backend/extract_exact_pdf.py
