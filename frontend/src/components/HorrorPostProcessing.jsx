@@ -23,7 +23,7 @@ export default function HorrorPostProcessing() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: `radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, ${vignetteDarkness}) 100%)`,
+        background: `radial-gradient(ellipse at center, transparent 65%, rgba(0, 0, 0, ${lifelines <= 1 ? '0.45' : '0.3'}) 100%)`,
         transition: 'background 0.5s ease-out'
       }} />
 

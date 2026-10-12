@@ -55,6 +55,49 @@ SPATIAL_COORDINATES = [
     [0.0, 0.0, 3.8],
 ]
 
+ROOM_COORDINATES = {
+    "study": [
+        [-7.1, 0.78, -6.1],
+        [-5.0, 0.85, -7.2],
+        [-9.2, 0.95, -4.6],
+        [-8.5, 0.45, -6.8],
+        [-6.0, 0.78, -6.1],
+        [-5.2, 0.0, -5.2],
+    ],
+    "library": [
+        [-6.9, 0.45, 4.6],
+        [-6.4, 0.9, 2.8],
+        [-9.2, 1.2, 7.0],
+        [-5.6, 0.5, 6.9],
+        [-8.9, 0.5, 3.5],
+        [-7.8, 0.45, 4.6],
+    ],
+    "chapel": [
+        [6.5, 0.78, 5.0],
+        [5.5, 0.78, 5.0],
+        [7.5, 0.78, 5.0],
+        [9.2, 1.1, 3.4],
+        [4.0, 1.2, 7.0],
+        [6.5, 0.78, 5.8],
+    ],
+    "attic": [
+        [-3.45, 1.1, -7.1],
+        [-0.6, 0.55, -5.5],
+        [0.9, 0.6, -7.2],
+        [2.2, 1.1, -5.0],
+        [-2.0, 0.4, -6.5],
+        [0.0, 0.55, -6.0],
+    ],
+    "cellar": [
+        [5.6, 0.78, -3.6],
+        [6.6, 0.95, -7.0],
+        [9.2, 0.95, -6.0],
+        [9.2, 0.95, -4.0],
+        [7.2, 0.78, -3.6],
+        [5.0, 0.95, -7.0],
+    ],
+}
+
 RIDDLE_TEMPLATES = {
     "unclosed_file": "Something here opens a door and never closes it.",
     "bare_except": "A desperate cry swallows every scream without question.",
@@ -179,7 +222,8 @@ def build_room_objects(
     for idx, file_path in enumerate(selected_files):
         rel_path = str(file_path.relative_to(repo_path)).replace("\\", "/") if file_path.is_relative_to(repo_path) else file_path.name
         obj_id = f"obj_{room_name}_{idx + 1}"
-        pos = SPATIAL_COORDINATES[idx % len(SPATIAL_COORDINATES)]
+        room_coords = ROOM_COORDINATES.get(room_name, SPATIAL_COORDINATES)
+        pos = room_coords[idx % len(room_coords)]
         model_type = shuffled_models[idx % len(shuffled_models)]
 
         # Determine if this file holds a real finding

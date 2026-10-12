@@ -34,8 +34,9 @@ export default function InteractiveObject({ objData }) {
     })
   }
 
-  // Determine if prop needs an altar pedestal or stands on the floor
-  const isFloorStanding = objData.model_type === 'chest' || objData.model_type === 'clock'
+  // Determine if prop sits on a tabletop / furniture or stands on the floor
+  const isOnTabletop = Boolean(objData.position && objData.position[1] > 0.3)
+  const isFloorStanding = objData.model_type === 'chest' || objData.model_type === 'clock' || isOnTabletop
 
   return (
     <group
@@ -57,28 +58,36 @@ export default function InteractiveObject({ objData }) {
           {/* Gothic Octagonal Column Shaft */}
           <mesh castShadow receiveShadow>
             <cylinderGeometry args={[0.36, 0.44, 0.9, 8]} />
-            <meshStandardMaterial color="#191522" roughness={0.85} metalness={0.2} />
+            <meshStandardMaterial color="#3a354a" roughness={0.65} metalness={0.15} />
           </mesh>
           {/* Ornate Tabletop Altar Slab */}
           <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
             <cylinderGeometry args={[0.52, 0.52, 0.08, 8]} />
-            <meshStandardMaterial color="#251d32" roughness={0.7} />
+            <meshStandardMaterial color="#4d4560" roughness={0.55} />
           </mesh>
           {/* Inlaid Ancient Runic Ring Glow when Focused */}
           {isHighlighted && (
             <mesh position={[0, 0.495, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[0.26, 0.48, 16]} />
-              <meshBasicMaterial color={glowColor} transparent opacity={0.75} />
+              <meshBasicMaterial color={glowColor} transparent opacity={0.85} />
             </mesh>
           )}
         </group>
       )}
 
-      {/* Floor Plinth for Large Furniture (Chest / Grandfather Clock) */}
-      {isFloorStanding && (
+      {/* Floor Plinth for Large Furniture standing on floor */}
+      {isFloorStanding && !isOnTabletop && (
         <mesh position={[0, 0.04, 0]} receiveShadow>
           <boxGeometry args={[1.4, 0.08, 1.0]} />
-          <meshStandardMaterial color="#161220" roughness={0.8} />
+          <meshStandardMaterial color="#383248" roughness={0.7} />
+        </mesh>
+      )}
+
+      {/* Runic glowing ring when tabletop relic is focused */}
+      {isOnTabletop && isHighlighted && (
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.2, 0.45, 16]} />
+          <meshBasicMaterial color={glowColor} transparent opacity={0.8} />
         </mesh>
       )}
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import ProceduralRoom from './components/ProceduralRoom'
+import HorrorHouseEnvironment from './components/HorrorHouseEnvironment'
 import InteractiveObject from './components/InteractiveObject'
 import FirstPersonController from './components/FirstPersonController'
 import RoomHUD from './components/RoomHUD'
@@ -28,13 +28,41 @@ export default function App() {
     healthError,
     checkBackendHealth,
     setScreen,
-    fetchMansionMap
+    fetchMansionMap,
+    enterRoom,
+    isDevMode
   } = useGameStore()
 
-  // 1. Initial Health Check
+  // 1. Initial Health Check & Background Session Init
   useEffect(() => {
     checkBackendHealth()
-  }, [checkBackendHealth])
+    fetchMansionMap('sample').then((data) => {
+      if (data?.scan_id) {
+        enterRoom('library')
+      }
+    }).catch(() => {})
+  }, [checkBackendHealth, fetchMansionMap, enterRoom])
+
+  const handleJumpToRoom = async (roomName = 'library') => {
+    let sId = useGameStore.getState().scanId
+    if (!sId) {
+      const data = await fetchMansionMap('sample')
+      sId = data?.scan_id
+    }
+    await enterRoom(roomName)
+  }
+
+  // F2 key quickly jumps directly into the 3D chamber
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'F2') {
+        e.preventDefault()
+        handleJumpToRoom('library')
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [])
 
   // 2. Audio Ambiance & Door Creak on Screen Transitions
   useEffect(() => {
@@ -47,16 +75,15 @@ export default function App() {
   }, [currentScreen])
 
   // 3. Dynamic Fog Calculation (Thicker as candles die, thinner as relics are found)
-  // 3. Dynamic Fog Calculation - High-fidelity depth preserving Gothic walls and architecture
-  // Ensures walls at 7m-11m and floor flagstones are clearly visible rather than drowned in pitch black
-  const candleFogFactor = Math.max(0.6, lifelines / 4)
+  // 3. Dynamic Fog Calculation - Clear room visibility preserving Gothic architecture
+  const candleFogFactor = Math.max(0.7, lifelines / 4)
   const relicClarity = foundRelics.length * 0.5
-  const fogNear = Math.max(5.0, 6.0 * candleFogFactor + relicClarity * 0.2)
-  const fogFar = Math.max(22.0, 26.0 * candleFogFactor + relicClarity * 1.5)
+  const fogNear = Math.max(7.0, 8.5 * candleFogFactor + relicClarity * 0.2)
+  const fogFar = Math.max(26.0, 32.0 * candleFogFactor + relicClarity * 1.5)
 
   const objects = roomData?.objects || []
   const themeColor = roomData?.theme_color || '#38bdf8'
-  const ambientIntensity = (lowQuality ? 0.7 : 0.58) * (brightness || 1.2)
+  const ambientIntensity = Math.max(0.75, (lowQuality ? 0.95 : 0.82) * (brightness || 1.2))
 
   return (
     <div style={{
@@ -145,6 +172,62 @@ export default function App() {
         </div>
       )}
 
+      {/* Dev Quick Jump Bar */}
+      {isDevMode && currentScreen !== 'room' && (
+        <div style={{
+          position: 'fixed',
+          top: '14px',
+          right: '18px',
+          zIndex: 9999,
+          display: 'flex',
+          gap: '8px',
+          background: 'rgba(10, 8, 16, 0.92)',
+          border: '1px solid rgba(239, 68, 68, 0.45)',
+          borderRadius: '6px',
+          padding: '6px 12px',
+          boxShadow: '0 4px 25px rgba(0,0,0,0.9)'
+        }}>
+          <button
+            onClick={() => handleJumpToRoom('library')}
+            style={{
+              background: '#dc2626',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '6px 14px',
+              fontSize: '11px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace',
+              letterSpacing: '0.5px'
+            }}
+          >
+            ⚡ 3D CHAMBER (F2)
+          </button>
+          <button
+            onClick={async () => {
+              if (!useGameStore.getState().scanId) {
+                await fetchMansionMap('sample')
+              }
+              setScreen('map')
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: '#e2e8f0',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '4px',
+              padding: '6px 12px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}
+          >
+            BLUEPRINT MAP
+          </button>
+        </div>
+      )}
+
       {/* 2. Landing Screen */}
       {currentScreen === 'landing' && <LandingScreen />}
 
@@ -175,8 +258,8 @@ export default function App() {
             {/* Adjustable Ambient Dark Light */}
             <ambientLight intensity={ambientIntensity} />
 
-            {/* Procedural 3D Room Architecture (Floor, Walls, Torches, Ceiling) */}
-            <ProceduralRoom roomThemeColor={themeColor} />
+            {/* Procedural 3D Victorian Horror House Interior (Rooms, Furniture, Lighting, Dust) */}
+            <HorrorHouseEnvironment />
 
             {/* Interactive 3D Objects Placed via /api/room Coordinates */}
             {objects.map((obj) => (

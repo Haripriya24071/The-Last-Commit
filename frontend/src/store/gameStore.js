@@ -45,14 +45,14 @@ const saveSettings = (newSettings) => {
 const initialSettings = loadSavedSettings()
 
 export const useGameStore = create((set, get) => ({
-  // Screen Flow: 'landing' | 'welcome' | 'repo_input' | 'role_select' | 'map' | 'room'
-  currentScreen: 'landing',
+  // Screen Flow: 'room' | 'map' | 'landing'
+  currentScreen: 'room',
   playerName: 'Investigator',
   repoUrl: 'sample',
   scanProgressMessage: 'Awakening ancient detectors...',
 
   // Game navigation state
-  currentView: 'map', // 'map' | 'room'
+  currentView: 'room', // 'map' | 'room'
   scanId: null,
   role: 'ghost',
   currentRoom: 'library',
@@ -72,6 +72,7 @@ export const useGameStore = create((set, get) => ({
   lastScareType: null,
   showReport: false,
   hauntingReport: null,
+  focusedObject: null,
 
   // Warmth & Proximity (driven by /api/warmth)
   warmth: 0.0,
@@ -79,8 +80,18 @@ export const useGameStore = create((set, get) => ({
 
   // Map & Room data from API
   mansionMap: null,
-  rolePresence: { ghost: 'strong', reaper: 'strong', skeleton: 'strong' },
-  roomData: null,
+  roomData: {
+    room_name: 'library',
+    title: 'The Grand Library',
+    description: 'Towering bookshelves, antique mahogany tables, and corrupted code relics.',
+    theme_color: '#38bdf8',
+    objects: [
+      { id: 'obj_library_1', filename: 'cache.py', display_name: 'cache.py', model_type: 'tome', position: [-6.9, 0.48, 4.6], glow_color: '#38bdf8' },
+      { id: 'obj_library_2', filename: 'config.py', display_name: 'config.py', model_type: 'chest', position: [-9.2, 0.0, 7.0], glow_color: '#38bdf8' },
+      { id: 'obj_library_3', filename: 'server.py', display_name: 'server.py', model_type: 'portrait', position: [-6.4, 0.9, 2.8], glow_color: '#38bdf8' },
+      { id: 'obj_library_4', filename: 'models.py', display_name: 'models.py', model_type: 'skull', position: [-5.6, 0.5, 6.9], glow_color: '#38bdf8' },
+    ]
+  },
   isLoadingRoom: false,
 
   // Audio Context State
@@ -144,6 +155,12 @@ export const useGameStore = create((set, get) => ({
   setPointerLocked: (locked) => set({ isPointerLocked: locked }),
   setSubtitle: (subtitle) => set({ activeSubtitle: subtitle }),
   clearSubtitle: () => set({ activeSubtitle: null }),
+  setFocusedObject: (obj) => set({ focusedObject: obj }),
+  interactFocusedObject: () => {
+    const { focusedObject, checkObject, isGameOver } = get()
+    if (!focusedObject || isGameOver) return
+    checkObject(focusedObject.id)
+  },
 
 
   // Check Backend /health on load

@@ -52,14 +52,14 @@ export default function HorrorCinematicEffects({ bloodSpillActive = false, onBlo
         }}
       />
 
-      {/* 2. Heavy Gothic Vignette & Breathing Darkness */}
+      {/* 2. Atmospheric Subtle Cinematic Vignette */}
       <div
         style={{
           position: 'fixed',
           inset: 0,
           pointerEvents: 'none',
-          background: `radial-gradient(circle at 50% 50%, transparent ${Math.max(25, 55 - warmth * 30)}%, rgba(3, 2, 6, ${0.85 + warmth * 0.12}) 100%)`,
-          boxShadow: warmth > 0.5 ? `inset 0 0 ${Math.round(warmth * 120)}px rgba(185, 28, 28, 0.45)` : 'none',
+          background: `radial-gradient(circle at 50% 50%, transparent 68%, rgba(3, 2, 6, ${0.35 + warmth * 0.15}) 100%)`,
+          boxShadow: warmth > 0.5 ? `inset 0 0 ${Math.round(warmth * 80)}px rgba(185, 28, 28, 0.4)` : 'none',
           transition: 'background 0.3s, box-shadow 0.3s',
           zIndex: 81
         }}

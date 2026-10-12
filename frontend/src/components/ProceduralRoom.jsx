@@ -72,93 +72,93 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow={!lowQuality}>
         <planeGeometry args={[14, 14, 12, 12]} />
         <meshStandardMaterial
-          color="#121118"
-          roughness={0.75}
-          metalness={0.2}
+          color="#2e2a3c"
+          roughness={0.65}
+          metalness={0.15}
         />
       </mesh>
 
       {/* Decorative Stone Border Inlay */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
         <ringGeometry args={[6.4, 6.8, 4]} />
-        <meshStandardMaterial color="#2d2238" roughness={0.6} />
+        <meshStandardMaterial color="#4a3b56" roughness={0.55} />
       </mesh>
 
       {/* 2. Gothic Stone Walls */}
       {/* North Wall */}
       <mesh position={[0, 3, -7]} receiveShadow={!lowQuality}>
         <boxGeometry args={[14, 6, 0.4]} />
-        <meshStandardMaterial color="#0b0912" roughness={0.9} />
+        <meshStandardMaterial color="#322d42" roughness={0.75} />
       </mesh>
       {/* South Wall */}
       <mesh position={[0, 3, 7]} receiveShadow={!lowQuality}>
         <boxGeometry args={[14, 6, 0.4]} />
-        <meshStandardMaterial color="#0b0912" roughness={0.9} />
+        <meshStandardMaterial color="#322d42" roughness={0.75} />
       </mesh>
       {/* West Wall */}
       <mesh position={[-7, 3, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow={!lowQuality}>
         <boxGeometry args={[14, 6, 0.4]} />
-        <meshStandardMaterial color="#0b0912" roughness={0.9} />
+        <meshStandardMaterial color="#322d42" roughness={0.75} />
       </mesh>
       {/* East Wall */}
       <mesh position={[7, 3, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow={!lowQuality}>
         <boxGeometry args={[14, 6, 0.4]} />
-        <meshStandardMaterial color="#0b0912" roughness={0.9} />
+        <meshStandardMaterial color="#322d42" roughness={0.75} />
       </mesh>
 
       {/* Chamber Master Feature Mural (North Wall - Exact Reference Image) */}
       <mesh position={[0, 3.2, -6.75]}>
         <planeGeometry args={[11, 4.8]} />
-        <meshStandardMaterial map={northTexture} roughness={0.6} />
+        <meshStandardMaterial map={northTexture} roughness={0.4} />
       </mesh>
 
       {/* West Wall Portrait Hallway Feature (Exact Reference Image 12) */}
       <mesh position={[-6.75, 3.2, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[9, 4.5]} />
-        <meshStandardMaterial map={westTexture} roughness={0.6} />
+        <meshStandardMaterial map={westTexture} roughness={0.4} />
       </mesh>
 
       {/* East Wall Study Art Feature (Exact Reference Image 16) */}
       <mesh position={[6.75, 3.2, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[9, 4.5]} />
-        <meshStandardMaterial map={eastTexture} roughness={0.6} />
+        <meshStandardMaterial map={eastTexture} roughness={0.4} />
       </mesh>
 
       {/* 3. Wainscoting Wood Paneling Lower Trim */}
       <mesh position={[0, 0.8, -6.8]}>
         <boxGeometry args={[13.8, 1.6, 0.1]} />
-        <meshStandardMaterial color="#1f1826" roughness={0.6} />
+        <meshStandardMaterial color="#422d20" roughness={0.5} />
       </mesh>
       <mesh position={[0, 0.8, 6.8]}>
         <boxGeometry args={[13.8, 1.6, 0.1]} />
-        <meshStandardMaterial color="#1f1826" roughness={0.6} />
+        <meshStandardMaterial color="#422d20" roughness={0.5} />
       </mesh>
       <mesh position={[-6.8, 0.8, 0]} rotation={[0, Math.PI / 2, 0]}>
         <boxGeometry args={[13.8, 1.6, 0.1]} />
-        <meshStandardMaterial color="#1f1826" roughness={0.6} />
+        <meshStandardMaterial color="#422d20" roughness={0.5} />
       </mesh>
       <mesh position={[6.8, 0.8, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[13.8, 1.6, 0.1]} />
-        <meshStandardMaterial color="#1f1826" roughness={0.6} />
+        <meshStandardMaterial color="#422d20" roughness={0.5} />
       </mesh>
 
       {/* 4. Four Gothic Stone Corner Columns */}
       {[[-6.6, -6.6], [6.6, -6.6], [-6.6, 6.6], [6.6, 6.6]].map(([cx, cz], idx) => (
         <mesh key={idx} position={[cx, 3, cz]}>
           <boxGeometry args={[0.9, 6, 0.9]} />
-          <meshStandardMaterial color="#1a1622" roughness={0.8} />
+          <meshStandardMaterial color="#363148" roughness={0.7} />
         </mesh>
       ))}
 
       {/* 5. Ceiling with Wooden Beams */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 6, 0]}>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color="#06050a" roughness={0.95} />
+        <meshStandardMaterial color="#1f1b29" roughness={0.9} />
       </mesh>
       {[-4, -1.5, 1.5, 4].map((z, idx) => (
         <mesh key={idx} position={[0, 5.85, z]}>
           <boxGeometry args={[14, 0.3, 0.5]} />
-          <meshStandardMaterial color="#17121c" roughness={0.7} />
+          <meshStandardMaterial color="#302016" roughness={0.65} />
         </mesh>
       ))}
 
@@ -281,8 +281,9 @@ export default function ProceduralRoom({ roomThemeColor = '#38bdf8' }) {
         />
       </points>
 
-      {/* Overhead Atmospheric Tint */}
-      <pointLight position={[0, 5, 0]} color={roomThemeColor} intensity={0.65} distance={14} />
+      {/* Overhead Atmospheric Chandelier Illumination */}
+      <pointLight position={[0, 4.8, 0]} color="#fffbeb" intensity={2.2} distance={18} decay={1.5} />
+      <pointLight position={[0, 3.5, 0]} color={roomThemeColor} intensity={1.8} distance={16} decay={1.5} />
     </group>
   )
 }

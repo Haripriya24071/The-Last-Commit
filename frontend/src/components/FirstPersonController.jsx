@@ -3,11 +3,13 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGameStore } from '../store/gameStore'
 import { AudioEngine } from './AudioEngine'
+import { activeHouse } from './world/House'
 
 export default function FirstPersonController() {
   const { camera, scene, gl } = useThree()
   const isGameOver = useGameStore((state) => state.isGameOver)
   const lifelines = useGameStore((state) => state.lifelines)
+  const currentRoom = useGameStore((state) => state.currentRoom)
   const setFocusedObject = useGameStore((state) => state.setFocusedObject)
   const interactFocusedObject = useGameStore((state) => state.interactFocusedObject)
   const setPointerLocked = useGameStore((state) => state.setPointerLocked)
@@ -16,6 +18,21 @@ export default function FirstPersonController() {
   const yaw = useRef(0)
   const pitch = useRef(0)
   const isLocked = useRef(false)
+
+  // Set spawn position based on entered room zone
+  useEffect(() => {
+    const SPAWN_POINTS = {
+      study: [-6.5, 1.6, -3.5],
+      library: [-6.5, 1.6, 3.5],
+      chapel: [5.5, 1.6, 3.5],
+      attic: [-0.6, 1.6, -3.5],
+      cellar: [5.5, 1.6, -3.5],
+    }
+    const spawn = SPAWN_POINTS[currentRoom] || [0, 1.6, 4.5]
+    camera.position.set(spawn[0], spawn[1], spawn[2])
+    yaw.current = 0
+    pitch.current = 0
+  }, [currentRoom, camera])
 
   // WASD movement state
   const moveState = useRef({ forward: false, backward: false, left: false, right: false })
@@ -171,12 +188,43 @@ export default function FirstPersonController() {
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, yaw.current, 0))
     const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, yaw.current, 0))
 
-    camera.position.addScaledVector(forward, -velocity.current.z * dt)
-    camera.position.addScaledVector(right, -velocity.current.x * dt)
+    const dx = forward.x * (-velocity.current.z * dt) + right.x * (-velocity.current.x * dt)
+    const dz = forward.z * (-velocity.current.z * dt) + right.z * (-velocity.current.x * dt)
 
-    // Clamp inside room boundaries (-5.6m to +5.6m)
-    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -5.6, 5.6)
-    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -5.6, 5.6)
+    const colliders = activeHouse ? activeHouse.getColliders() : []
+    const playerRadius = 0.28
+
+    // Test X-axis movement with wall/furniture sliding
+    let nextX = THREE.MathUtils.clamp(camera.position.x + dx, -9.4, 9.4)
+    let collideX = false
+    for (const b of colliders) {
+      if (
+        nextX + playerRadius > b.minX &&
+        nextX - playerRadius < b.maxX &&
+        camera.position.z + playerRadius > b.minZ &&
+        camera.position.z - playerRadius < b.maxZ
+      ) {
+        collideX = true
+        break
+      }
+    }
+    if (!collideX) camera.position.x = nextX
+
+    // Test Z-axis movement with wall/furniture sliding
+    let nextZ = THREE.MathUtils.clamp(camera.position.z + dz, -7.4, 7.4)
+    let collideZ = false
+    for (const b of colliders) {
+      if (
+        camera.position.x + playerRadius > b.minX &&
+        camera.position.x - playerRadius < b.maxX &&
+        nextZ + playerRadius > b.minZ &&
+        nextZ - playerRadius < b.maxZ
+      ) {
+        collideZ = true
+        break
+      }
+    }
+    if (!collideZ) camera.position.z = nextZ
 
     // Walking Head-Bob & Footstep Audio
     if (isMoving) {
@@ -203,10 +251,10 @@ export default function FirstPersonController() {
       spotlightRef.current.target.updateMatrixWorld()
 
       // Flickering candle flame intensity
-      const candleFactor = Math.max(0.4, lifelines / 4)
-      const flicker = Math.sin(time * 14) * 0.2 + Math.cos(time * 24) * 0.1
-      spotlightRef.current.intensity = (2.6 + flicker) * candleFactor
-      candleLightRef.current.intensity = (1.4 + flicker * 0.5) * candleFactor
+      const candleFactor = Math.max(0.5, lifelines / 4)
+      const flicker = Math.sin(time * 14) * 0.25 + Math.cos(time * 24) * 0.15
+      spotlightRef.current.intensity = (4.8 + flicker) * candleFactor
+      candleLightRef.current.intensity = (2.4 + flicker * 0.5) * candleFactor
     }
 
     // 4. Center Crosshair Raycasting & Intelligent Proximity Aiming
